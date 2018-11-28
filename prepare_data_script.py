@@ -7,6 +7,7 @@ import sys
 import cv2 as cv2
 import pickle
 import os
+from utils import *
 
 ''''
     This is a script for preparation of data for train the NN model.
@@ -142,20 +143,22 @@ for root, dirs, files in os.walk(data_dir):
         # Resize image by scale
         newWidth = int(im.shape[0] * scale)
         newHeight = int(im.shape[1] * scale)
-        im = cv2.resize(im, (newWidth, newHeight))
+        im = cv2.resize(im, (newHeight, newWidth))
 
         rois = selective_search(im)
 
         # Create labels
         gt_labels = list(labels_raw.loc[labels_raw['image_name'] == name]['rois'])[0]
         labels = btach_intersection_over_union(rois, gt_labels)
+        # drawRects(im, rois, gt_labels) ### debug ###
         print('Number of positive labels: {}'.format(np.sum(labels)))
         rois_n_labels = np.column_stack((rois, labels))
 
         # Save as pickle file
-        saveStr = 'rois_for_' + str(name) +'.p'
+        name_split = name.split('.')[0]
+        saveStr = 'rois_for_' + str(name_split) +'.p'
         print('Ended to process sample {}'.format(name))
         pickle.dump(rois_n_labels, open(os.path.join(output_dir, saveStr), 'wb'))
 
-        saveStr = 'resized_img_' + str(name) + '.p'
+        saveStr = 'resized_img_' + str(name_split) + '.p'
         pickle.dump(im, open(os.path.join(output_dir, saveStr), 'wb'))

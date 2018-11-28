@@ -8,61 +8,61 @@ import os
 from PIL import Image
 import sys
 import cv2 as cv2
+import pickle
+from utils import *
 
 class BusDataLoader(Dataset):
-    def __init__(self, root_dir, label_path, transform=None):
+    def __init__(self, root_dir, BGpad=16, transform=None):
         """
         DataLoader class for handling and pre-processing of the data
+        This class handles picked files containing pre-found region of interest rects that
+        where found by selective search algorithm.
+
         Args:
-            root_dir (string)       : Path to the root folder of the images
-                                      (make sure only images inside)
-            label_path (string)     : Path to the images txt GT file
+            root_dir (string)                       : Path to the root folder of the pickeled files
+            BGpad (int, must be equal)              : How much background padding to add
+            transform (pytorch transform class)     : Defines different transformations on the data
+
+        Methods:
+        __getitem__ - generates a fixed size warped image to enter the NN backbone model.
+        __len__     - number of data samples in the class
 
         """
         self.root_dir = root_dir
-        self.label_path = label_path
         self.transform = transform
 
-        self.labels = self._process_labels_file()
-        self.raw_data, self.rois_data = self._process_data()
+        self.rect_data = self._process_data()
+        self.resized_images = self._process_images()
 
-        self.data, self.labels = self._arrange_data_and_labels()
+        # self.data, self.labels = self._arrange_data_and_labels()
 
-    def _process_labels_file(self, columns_list=['image_name', 'rois']):
-        data_frame = pd.DataFrame([], columns=columns_list)
-        with open(self.label_path) as fp:
-            for i, line in enumerate(fp):
-                tmp = line.split(':')
-                file_name = tmp[0]
-                rois = list(tmp[1].replace('],[', ' ').replace('[', ' ').replace(']', ' ').split())
-                rois = [list(map(int, item.split(','))) for item in rois]
-                data_frame.loc[i] = [file_name, rois]
+    def _process_data(self, columns_list_rois=['image_name', 'rect', 'label']):
+        data_frame = pd.DataFrame([], columns=columns_list_rois)
+
+        for root, dirs, files in os.walk(self.root_dir):
+            for name in files:
+                if re.findall(r'rois_for_.*', name):
+                    split_name = name.replace('.', '_').split('_')
+                    rects = pickle.load(open(os.path.join(self.root_dir, name), "rb"))
+
+                    temp = pd.DataFrame([[split_name[2], rect[:-1], rect[-1]] for rect in rects], columns=columns_list_rois)
+                    data_frame = data_frame.append(temp, ignore_index=True)
+
         return data_frame
 
-    def _process_data(self, scale=0.25, columns_list_raw_data=['image_name', 'raw_image'],
-                      columns_list_rois=['image_name', 'rois']):
-        raw_data = pd.DataFrame([], columns=columns_list_raw_data)
-        rois_data = pd.DataFrame([], columns=columns_list_rois)
+    def _process_images(self, columns_list=['image_name', 'image']):
+        data_frame = pd.DataFrame([], columns=columns_list)
+        i = 0
 
-        print('Start processing the data')
         for root, dirs, files in os.walk(self.root_dir):
-            for i, name in enumerate(files):
-                image_path = os.path.join(root, name)
-                im = cv2.imread(image_path)
+            for name in files:
+                if re.findall(r'resized_img_.*', name):
+                    split_name = name.replace('.', '_').split('_')
+                    img = pickle.load(open(os.path.join(self.root_dir, name), "rb"))
 
-                # Resize im by scale
-                newWidth = int(im.shape[0] * scale)
-                newHeight = int(im.shape[1] * scale)
-                im = cv2.resize(im, (newWidth, newHeight))
-                raw_data.loc[i] = [name, im]
-
-                rois = selective_search(im)
-                # Document the rois
-                # for j, roi in enumerate(rois):
-                    # rois_data.loc[j] = [name, roi]
-                print('Ended to process sample number {}'.format(i))
-
-        return raw_data, rois_data
+                    data_frame.loc[i] = [split_name[2], img]
+                    i += 1
+        return data_frame
 
     def _arrange_data_and_labels(self):
         merged = pd.merge(self.data, self.labels, on='image_name')
@@ -70,17 +70,39 @@ class BusDataLoader(Dataset):
         return merged.iloc[:, 1].values, merged.iloc[:, 2].values
 
     def __len__(self):
-        return len(self.data)
+        return len(self.rect_data)
 
     # Getter, normalizes the data and the labels
     def __getitem__(self, idx):
-        sample = Image.open(self.data[idx])
-        # sample = np.asarray(sample)
-        sample_labels = self.labels[idx]
+        # get the data of a rect from the main table
+        name, rect, label = self.rect_data.loc[idx]
+
+        # extract the relevant image from the images table
+        img = self.resized_images.loc[self.resized_images['image_name'] == name]['image'].values[0]
+
+        if self.BGpad:
+            BGpad = self.BGpad
+            h, w, c = np.shape(img)
+            minX = rect[1] - BGpad//2 if rect[1] - BGpad//2 >=0 else 0
+            maxX = rect[1] + rect[3] + BGpad // 2 if rect[1] + rect[3] + BGpad // 2 <= h else h
+
+            minY = rect[0] - BGpad // 2 if rect[0] - BGpad // 2 >= 0 else 0
+            maxY = rect[0] + rect[2] + BGpad // 2 if rect[0] + rect[2] + BGpad // 2 <= h else w
+            crop_img = img[minX:maxX, minY:maxY, :]
+
+        else:
+            # crop the image by rect
+            crop_img = img[rect[1]:rect[1]+rect[3], rect[0]: rect[0]+rect[2], :]
+
+        # normalize
+        # crop_img = crop_img / 255.
+        sample = np.array(crop_img)
+
         if self.transform:
+            sample = transforms.ToPILImage()(sample)
             sample = self.transform(sample)
 
-        return torch.tensor(sample).float(), torch.tensor(sample_labels).float()
+        return torch.tensor(sample).float(), torch.tensor(label).long()
 
 def selective_search(im, printRect=False, method='reg'):
 
@@ -147,18 +169,18 @@ def get_mean_and_std(dataset):
     std.div_(len(dataset))
     return mean, std
 
+''' ###################################### MAIN ###################################### 
+    Sample how to use the class                                                       '''
 
-# get_mean_and_std(datasets.ImageFolder(root=<path_to_root>, transform=transforms.ToTensor()))
-# selective_search('/Users/royhirsch/Documents/Study/Current/ComputerVision/project/busesTrain/DSCF1015.JPG')
 data_transform = transforms.Compose([
-                 transforms.Resize(size=[256,256]),
-                 transforms.RandomHorizontalFlip(),
-                 transforms.ToTensor(),
-                 transforms.Normalize(mean=[0.5686, 0.5184, 0.4736],
-                                      std=[0.2385, 0.2251, 0.2193])
-                 ])
+                 transforms.Resize(size=[256, 256]),
+                 transforms.ToTensor()])
 
-TrainDataLoader = BusDataLoader(root_dir='/Users/royhirsch/Documents/Study/Current/ComputerVision/project/busesTrain',
-                                label_path='/Users/royhirsch/Documents/Study/Current/ComputerVision/project/annotationsTrain.txt',
-                                transform=data_transform)
-TrainDataLoader.__getitem__(1)
+data_dir   = '/Users/royhirsch/Documents/GitHub/DetectionProject/ProcessedData'
+
+TrainDataLoader = BusDataLoader(data_dir, transform=data_transform)
+
+img = TrainDataLoader.__getitem__(30)[0]
+
+
+
