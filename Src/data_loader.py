@@ -24,7 +24,7 @@ class BusDataLoader(Dataset):
             outShape (int)                          : The desired input shape to the BB NN
 
         Methods:
-        __getitem__ - generates a fixed size warped image to enter the NN backbone model.
+        __getitem__ - generates a fixed size warped image to enter the NN backbone model and a GT label
         __len__     - number of data samples in the class
 
         """
@@ -101,17 +101,11 @@ class BusDataLoader(Dataset):
 
         return torch.tensor(sample).float(), torch.tensor(label).long()
 
-def selective_search(im, printRect=False, method='reg'):
+def selective_search(im, method='reg'):
 
     # speed-up using multithreads
     cv2.setUseOptimized(True)
     cv2.setNumThreads(4)
-
-    # im = cv2.imread(imgPath)
-    # resize image
-    # newHeight = 200
-    # newWidth = int(im.shape[1] * 200 / im.shape[0])
-    # im = cv2.resize(im, (newWidth, newHeight))
 
     # create Selective Search Segmentation Object using default parameters
     ss = cv2.ximgproc.segmentation.createSelectiveSearchSegmentation()
@@ -131,24 +125,6 @@ def selective_search(im, printRect=False, method='reg'):
     rects = ss.process()
     print('Total Number of Region Proposals: {}'.format(len(rects)))
 
-    if printRect:
-        # number of region proposals to show
-        numShowRects = 100
-
-        # create a copy of original image
-        imOut = im.copy()
-        # itereate over all the region proposals
-        for i in range(numShowRects):
-            # draw rectangle for region proposal till numShowRects
-            x, y, w, h = rects[i]
-            cv2.rectangle(imOut, (x, y), (x + w, y + h), (0, 255, 0), 1, cv2.LINE_AA)
-
-        # show output
-        import matplotlib.pyplot as plt
-        plt.figure()
-        plt.imshow(imOut)
-        plt.show()
-
     return rects
 
 def get_mean_and_std(dataset):
@@ -167,18 +143,17 @@ def get_mean_and_std(dataset):
     return mean, std
 
 ''' ###################################### MAIN ###################################### 
-    Sample how to use the class                                                       '''
 
-
+Sample how to use the class                                                       
 data_dir   = '/Users/royhirsch/Documents/GitHub/DetectionProject/ProcessedData'
 
+Declaration of the class;
 TrainDataLoader = BusDataLoader(data_dir)
 
-img = TrainDataLoader.__getitem__(650)[0]
-'''
+Example of call to the itterator
+img, label = TrainDataLoader.__getitem__(650)
+
 good examples: 2728, 650, 965, 2814, 634175, 634443
 
 '''
-
-
 
