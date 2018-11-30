@@ -101,32 +101,6 @@ class BusDataLoader(Dataset):
 
         return torch.tensor(sample).float(), torch.tensor(label).long()
 
-def selective_search(im, method='reg'):
-
-    # speed-up using multithreads
-    cv2.setUseOptimized(True)
-    cv2.setNumThreads(4)
-
-    # create Selective Search Segmentation Object using default parameters
-    ss = cv2.ximgproc.segmentation.createSelectiveSearchSegmentation()
-
-    # set input image on which we will run segmentation
-    ss.setBaseImage(im)
-
-    # Switch to fast but low recall Selective Search method
-    if method == 'fast':
-        ss.switchToSelectiveSearchFast()
-
-    # Switch to high recall but slow Selective Search method
-    else:
-        ss.switchToSelectiveSearchQuality()
-
-    # run selective search segmentation on input image
-    rects = ss.process()
-    print('Total Number of Region Proposals: {}'.format(len(rects)))
-
-    return rects
-
 def get_mean_and_std(dataset):
     '''Compute the mean and std value of dataset.'''
     dataloader = torch.utils.data.DataLoader(dataset, batch_size=1, shuffle=True, num_workers=2)

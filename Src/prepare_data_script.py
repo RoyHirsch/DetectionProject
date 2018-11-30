@@ -29,7 +29,7 @@ output_dir = '/Users/royhirsch/Documents/GitHub/DetectionProject/ProcessedData'
 
 ''' ###################################### FUNCTIONS ###################################### '''
 
-def selective_search(im, printRect=False, method='reg'):
+def selective_search(im, method='reg'):
 
     # speed-up using multithreads
     cv2.setUseOptimized(True)
@@ -52,24 +52,6 @@ def selective_search(im, printRect=False, method='reg'):
     # run selective search segmentation on input image
     rects = ss.process()
     print('Total Number of Region Proposals: {}'.format(len(rects)))
-
-    if printRect:
-        # number of region proposals to show
-        numShowRects = 100
-
-        # create a copy of original image
-        imOut = im.copy()
-        # itereate over all the region proposals
-        for i in range(numShowRects):
-            # draw rectangle for region proposal till numShowRects
-            x, y, w, h = rects[i]
-            cv2.rectangle(imOut, (x, y), (x + w, y + h), (0, 255, 0), 1, cv2.LINE_AA)
-
-        # show output
-        import matplotlib.pyplot as plt
-        plt.figure()
-        plt.imshow(imOut)
-        plt.show()
 
     return rects
 
