@@ -1,0 +1,243 @@
+/System/Library/Frameworks/Python.framework/Versions/2.7/bin/python2.7 /Users/royhirsch/Documents/GitHub/DetectionProject/prepare_data_script.py
+Start processing sample DSCF1106.JPG
+Total Number of Region Proposals: 5906
+Number of positive labels: 222
+Ended to process sample DSCF1106.JPG
+Start processing sample DSCF1099.JPG
+Total Number of Region Proposals: 3018
+Number of positive labels: 183
+Ended to process sample DSCF1099.JPG
+Start processing sample DSCF1072.JPG
+Total Number of Region Proposals: 8737
+Number of positive labels: 197
+Ended to process sample DSCF1072.JPG
+Start processing sample DSCF1066.JPG
+Total Number of Region Proposals: 11611
+Number of positive labels: 239
+Ended to process sample DSCF1066.JPG
+Start processing sample DSCF1070.JPG
+Total Number of Region Proposals: 9765
+Number of positive labels: 219
+Ended to process sample DSCF1070.JPG
+Start processing sample DSCF1064.JPG
+Total Number of Region Proposals: 18548
+Number of positive labels: 91
+Ended to process sample DSCF1064.JPG
+Start processing sample DSCF1104.JPG
+Total Number of Region Proposals: 15246
+Number of positive labels: 301
+Ended to process sample DSCF1104.JPG
+Start processing sample DSCF1110.JPG
+Total Number of Region Proposals: 14970
+Number of positive labels: 286
+Ended to process sample DSCF1110.JPG
+Start processing sample DSCF1111.JPG
+Total Number of Region Proposals: 14064
+Number of positive labels: 309
+Ended to process sample DSCF1111.JPG
+Start processing sample DSCF1105.JPG
+Total Number of Region Proposals: 6764
+Number of positive labels: 191
+Ended to process sample DSCF1105.JPG
+Start processing sample DSCF1059.JPG
+Total Number of Region Proposals: 10413
+Number of positive labels: 90
+Ended to process sample DSCF1059.JPG
+Start processing sample DSCF1065.JPG
+Total Number of Region Proposals: 7235
+Number of positive labels: 231
+Ended to process sample DSCF1065.JPG
+Start processing sample DSCF1049.JPG
+Total Number of Region Proposals: 3073
+Number of positive labels: 264
+Ended to process sample DSCF1049.JPG
+Start processing sample DSCF1061.JPG
+Total Number of Region Proposals: 12386
+Number of positive labels: 244
+Ended to process sample DSCF1061.JPG
+Start processing sample DSCF1129.JPG
+Total Number of Region Proposals: 8225
+Number of positive labels: 164
+Ended to process sample DSCF1129.JPG
+Start processing sample DSCF1101.JPG
+Total Number of Region Proposals: 5102
+Number of positive labels: 201
+Ended to process sample DSCF1101.JPG
+Start processing sample DSCF1114.JPG
+Total Number of Region Proposals: 12644
+Number of positive labels: 244
+Ended to process sample DSCF1114.JPG
+Start processing sample DSCF1074.JPG
+Total Number of Region Proposals: 6377
+Number of positive labels: 59
+Ended to process sample DSCF1074.JPG
+Start processing sample DSCF1048.JPG
+Total Number of Region Proposals: 4304
+Number of positive labels: 336
+Ended to process sample DSCF1048.JPG
+Start processing sample DSCF1116.JPG
+Total Number of Region Proposals: 11899
+Number of positive labels: 234
+Ended to process sample DSCF1116.JPG
+Start processing sample DSCF1103.JPG
+Total Number of Region Proposals: 15651
+Number of positive labels: 333
+Ended to process sample DSCF1103.JPG
+Start processing sample DSCF1088.JPG
+Total Number of Region Proposals: 17744
+Number of positive labels: 258
+Ended to process sample DSCF1088.JPG
+Start processing sample DSCF1077.JPG
+Total Number of Region Proposals: 10637
+Number of positive labels: 311
+Ended to process sample DSCF1077.JPG
+Start processing sample DSCF1038.JPG
+Total Number of Region Proposals: 8844
+Number of positive labels: 40
+Ended to process sample DSCF1038.JPG
+Start processing sample DSCF1013.JPG
+Total Number of Region Proposals: 15157
+Number of positive labels: 721
+Ended to process sample DSCF1013.JPG
+Start processing sample DSCF1016.JPG
+Total Number of Region Proposals: 7038
+Number of positive labels: 495
+Ended to process sample DSCF1016.JPG
+Start processing sample DSCF1017.JPG
+Total Number of Region Proposals: 5547
+Number of positive labels: 138
+Ended to process sample DSCF1017.JPG
+Start processing sample DSCF1029.JPG
+Total Number of Region Proposals: 13870
+Number of positive labels: 379
+Ended to process sample DSCF1029.JPG
+Start processing sample DSCF1015.JPG
+Total Number of Region Proposals: 5093
+Number of positive labels: 281
+Ended to process sample DSCF1015.JPG
+Start processing sample DSCF1025.JPG
+Total Number of Region Proposals: 13361
+Number of positive labels: 148
+Ended to process sample DSCF1025.JPG
+Start processing sample DSCF1032.JPG
+Total Number of Region Proposals: 16071
+Number of positive labels: 224
+Ended to process sample DSCF1032.JPG
+Start processing sample DSCF1037.JPG
+Total Number of Region Proposals: 10572
+Number of positive labels: 207
+Ended to process sample DSCF1037.JPG
+Start processing sample DSCF1023.JPG
+Total Number of Region Proposals: 4954
+Number of positive labels: 77
+Ended to process sample DSCF1023.JPG
+Start processing sample DSCF1142.JPG
+Total Number of Region Proposals: 6585
+Number of positive labels: 187
+Ended to process sample DSCF1142.JPG
+Start processing sample DSCF1140.JPG
+Total Number of Region Proposals: 7852
+Number of positive labels: 160
+Ended to process sample DSCF1140.JPG
+Start processing sample DSCF1141.JPG
+Total Number of Region Proposals: 7816
+Number of positive labels: 191
+Ended to process sample DSCF1141.JPG
+Start processing sample DSCF1021.JPG
+Total Number of Region Proposals: 4770
+Number of positive labels: 101
+Ended to process sample DSCF1021.JPG
+Start processing sample DSCF1132.JPG
+Total Number of Region Proposals: 14037
+Number of positive labels: 375
+Ended to process sample DSCF1132.JPG
+Start processing sample DSCF1133.JPG
+Total Number of Region Proposals: 14272
+Number of positive labels: 94
+Ended to process sample DSCF1133.JPG
+Start processing sample DSCF1090.JPG
+Total Number of Region Proposals: 16048
+Number of positive labels: 88
+Ended to process sample DSCF1090.JPG
+Start processing sample DSCF1053.JPG
+Total Number of Region Proposals: 15949
+Number of positive labels: 289
+Ended to process sample DSCF1053.JPG
+Start processing sample DSCF1092.JPG
+Total Number of Region Proposals: 14730
+Number of positive labels: 127
+Ended to process sample DSCF1092.JPG
+Start processing sample DSCF1086.JPG
+Total Number of Region Proposals: 11883
+Number of positive labels: 573
+Ended to process sample DSCF1086.JPG
+Start processing sample DSCF1125.JPG
+Total Number of Region Proposals: 12704
+Number of positive labels: 250
+Ended to process sample DSCF1125.JPG
+Start processing sample DSCF1130.JPG
+Total Number of Region Proposals: 8985
+Number of positive labels: 186
+Ended to process sample DSCF1130.JPG
+Start processing sample DSCF1044.JPG
+Total Number of Region Proposals: 15865
+Number of positive labels: 95
+Ended to process sample DSCF1044.JPG
+Start processing sample DSCF1050.JPG
+Total Number of Region Proposals: 17968
+Number of positive labels: 207
+Ended to process sample DSCF1050.JPG
+Start processing sample DSCF1068.JPG
+Total Number of Region Proposals: 7767
+Number of positive labels: 262
+Ended to process sample DSCF1068.JPG
+Start processing sample DSCF1040.JPG
+Total Number of Region Proposals: 4814
+Number of positive labels: 232
+Ended to process sample DSCF1040.JPG
+Start processing sample DSCF1097.JPG
+Total Number of Region Proposals: 3387
+Number of positive labels: 116
+Ended to process sample DSCF1097.JPG
+Start processing sample DSCF1120.JPG
+Total Number of Region Proposals: 10845
+Number of positive labels: 363
+Ended to process sample DSCF1120.JPG
+Start processing sample DSCF1135.JPG
+Total Number of Region Proposals: 14802
+Number of positive labels: 106
+Ended to process sample DSCF1135.JPG
+Start processing sample DSCF1109.JPG
+Total Number of Region Proposals: 12730
+Number of positive labels: 137
+Ended to process sample DSCF1109.JPG
+Start processing sample DSCF1082.JPG
+Total Number of Region Proposals: 8737
+Number of positive labels: 219
+Ended to process sample DSCF1082.JPG
+Start processing sample DSCF1094.JPG
+Total Number of Region Proposals: 2221
+Number of positive labels: 81
+Ended to process sample DSCF1094.JPG
+Start processing sample DSCF1137.JPG
+Total Number of Region Proposals: 18531
+Number of positive labels: 66
+Ended to process sample DSCF1137.JPG
+Start processing sample DSCF1122.JPG
+Total Number of Region Proposals: 7780
+Number of positive labels: 142
+Ended to process sample DSCF1122.JPG
+Start processing sample DSCF1081.JPG
+Total Number of Region Proposals: 6367
+Number of positive labels: 127
+Ended to process sample DSCF1081.JPG
+Start processing sample DSCF1056.JPG
+Total Number of Region Proposals: 13856
+Number of positive labels: 424
+Ended to process sample DSCF1056.JPG
+Start processing sample DSCF1042.JPG
+Total Number of Region Proposals: 18568
+Number of positive labels: 128
+Ended to process sample DSCF1042.JPG
+
+Process finished with exit code 0

@@ -12,7 +12,7 @@ import pickle
 from utils import *
 
 class BusDataLoader(Dataset):
-    def __init__(self, root_dir, BGpad=16, transform=None):
+    def __init__(self, root_dir, BGpad=16, outShape=225):
         """
         DataLoader class for handling and pre-processing of the data
         This class handles picked files containing pre-found region of interest rects that
@@ -21,7 +21,7 @@ class BusDataLoader(Dataset):
         Args:
             root_dir (string)                       : Path to the root folder of the pickeled files
             BGpad (int, must be equal)              : How much background padding to add
-            transform (pytorch transform class)     : Defines different transformations on the data
+            outShape (int)                          : The desired input shape to the BB NN
 
         Methods:
         __getitem__ - generates a fixed size warped image to enter the NN backbone model.
@@ -29,12 +29,16 @@ class BusDataLoader(Dataset):
 
         """
         self.root_dir = root_dir
-        self.transform = transform
+        self.BGpad = BGpad
+        self.outShape = outShape
 
         self.rect_data = self._process_data()
         self.resized_images = self._process_images()
 
-        # self.data, self.labels = self._arrange_data_and_labels()
+        # TODO: bug fix, the use of Resize flips the image
+        self.transform  = transforms.Compose([
+                          transforms.Resize(size=[self.outShape, self.outShape]),
+                          transforms.ToTensor()])
 
     def _process_data(self, columns_list_rois=['image_name', 'rect', 'label']):
         data_frame = pd.DataFrame([], columns=columns_list_rois)
@@ -64,30 +68,26 @@ class BusDataLoader(Dataset):
                     i += 1
         return data_frame
 
-    def _arrange_data_and_labels(self):
-        merged = pd.merge(self.data, self.labels, on='image_name')
-        merged.sort_values('image_name').reset_index(inplace=True)
-        return merged.iloc[:, 1].values, merged.iloc[:, 2].values
-
     def __len__(self):
         return len(self.rect_data)
 
     # Getter, normalizes the data and the labels
     def __getitem__(self, idx):
-        # get the data of a rect from the main table
+        # Get the data of a rect from the main table
         name, rect, label = self.rect_data.loc[idx]
 
-        # extract the relevant image from the images table
+        # Extract the relevant image from the images table
         img = self.resized_images.loc[self.resized_images['image_name'] == name]['image'].values[0]
 
+        # Pad the bounding box with background pixels before warping
         if self.BGpad:
             BGpad = self.BGpad
             h, w, c = np.shape(img)
-            minX = rect[1] - BGpad//2 if rect[1] - BGpad//2 >=0 else 0
-            maxX = rect[1] + rect[3] + BGpad // 2 if rect[1] + rect[3] + BGpad // 2 <= h else h
+            minX = rect[1] - BGpad//2 if (rect[1] - BGpad//2) >=0 else 0
+            maxX = rect[1] + rect[3] + BGpad // 2 if (rect[1] + rect[3] + BGpad // 2) <= h else h
 
-            minY = rect[0] - BGpad // 2 if rect[0] - BGpad // 2 >= 0 else 0
-            maxY = rect[0] + rect[2] + BGpad // 2 if rect[0] + rect[2] + BGpad // 2 <= h else w
+            minY = rect[0] - BGpad // 2 if (rect[0] - BGpad // 2) >= 0 else 0
+            maxY = rect[0] + rect[2] + BGpad // 2 if (rect[0] + rect[2] + BGpad // 2) <= w else w
             crop_img = img[minX:maxX, minY:maxY, :]
 
         else:
@@ -95,12 +95,9 @@ class BusDataLoader(Dataset):
             crop_img = img[rect[1]:rect[1]+rect[3], rect[0]: rect[0]+rect[2], :]
 
         # normalize
-        # crop_img = crop_img / 255.
         sample = np.array(crop_img)
-
-        if self.transform:
-            sample = transforms.ToPILImage()(sample)
-            sample = self.transform(sample)
+        sample = transforms.ToPILImage()(sample)
+        sample = self.transform(sample)
 
         return torch.tensor(sample).float(), torch.tensor(label).long()
 
@@ -172,15 +169,16 @@ def get_mean_and_std(dataset):
 ''' ###################################### MAIN ###################################### 
     Sample how to use the class                                                       '''
 
-data_transform = transforms.Compose([
-                 transforms.Resize(size=[256, 256]),
-                 transforms.ToTensor()])
 
 data_dir   = '/Users/royhirsch/Documents/GitHub/DetectionProject/ProcessedData'
 
-TrainDataLoader = BusDataLoader(data_dir, transform=data_transform)
+TrainDataLoader = BusDataLoader(data_dir)
 
-img = TrainDataLoader.__getitem__(30)[0]
+img = TrainDataLoader.__getitem__(650)[0]
+'''
+good examples: 2728, 650, 965, 2814, 634175, 634443
+
+'''
 
 
 
