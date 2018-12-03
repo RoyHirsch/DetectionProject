@@ -24,7 +24,12 @@ class BusDataLoader(Dataset):
             outShape (int)                          : The desired input shape to the BB NN
 
         Methods:
-        __getitem__ - generates a fixed size warped image to enter the NN backbone model and a GT label
+        __getitem__ - generates the relevant data of single example:
+                      warped_image - a fixed size warped image to enter the NN backbone model
+                      label        - GT label (binary)
+                      rect         - [x, y, w, h] array represents the original bounding box
+                                     (in the original image coordinates)
+                                     (x, y) - top left corner of the bounding box
         __len__     - number of data samples in the class
 
         """
@@ -99,7 +104,8 @@ class BusDataLoader(Dataset):
         sample = transforms.ToPILImage()(sample)
         sample = self.transform(sample)
 
-        return torch.tensor(sample).float(), torch.tensor(label).long()
+        # rect.shape = [X, Y, W, H] (X, Y) - top left corner, return for the BB regresion
+        return torch.tensor(sample).float(), torch.tensor(label).long(), torch.tensor(rect).float()
 
 def get_mean_and_std(dataset):
     '''Compute the mean and std value of dataset.'''
@@ -124,10 +130,10 @@ data_dir   = '/Users/royhirsch/Documents/GitHub/DetectionProject/ProcessedData'
 Declaration of the class;
 TrainDataLoader = BusDataLoader(data_dir)
 
-Example of call to the itterator
-img, label = TrainDataLoader.__getitem__(650)
+Example of call to the iterator
+img, label, rect = TrainDataLoader.__getitem__(650)
 
 good examples: 2728, 650, 965, 2814, 634175, 634443
 
-'''
 
+'''
