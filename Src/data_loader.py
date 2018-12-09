@@ -40,10 +40,10 @@ class BusDataLoader(Dataset):
         self.rect_data = self._process_data()
         self.resized_images = self._process_images()
 
-        # TODO: bug fix, the use of Resize flips the image
-        self.transform  = transforms.Compose([
-                          transforms.Resize(size=[self.outShape, self.outShape]),
-                          transforms.ToTensor()])
+        self.transform = transforms.Compose([
+                         transforms.ToPILImage(),
+                         transforms.Resize(size=[self.outShape, self.outShape]),
+                         transforms.ToTensor()])
 
     def _process_data(self, columns_list_rois=['image_name', 'rect', 'label']):
         data_frame = pd.DataFrame([], columns=columns_list_rois)
@@ -68,6 +68,9 @@ class BusDataLoader(Dataset):
                 if re.findall(r'resized_img_.*', name):
                     split_name = name.replace('.', '_').split('_')
                     img = pickle.load(open(os.path.join(self.root_dir, name), "rb"))
+
+                    # Convert from BGR to RGB (reverse the depth dim order)
+                    img = img[...,::-1]
 
                     data_frame.loc[i] = [split_name[2], img]
                     i += 1
@@ -101,11 +104,11 @@ class BusDataLoader(Dataset):
 
         # normalize
         sample = np.array(crop_img)
-        sample = transforms.ToPILImage()(sample)
         sample = self.transform(sample)
 
         # rect.shape = [X, Y, W, H] (X, Y) - top left corner, return for the BB regresion
-        return torch.tensor(sample).float(), torch.tensor(label).long(), torch.tensor(rect).float()
+        # sampel.sape = [C, H, W]
+        return sample, torch.tensor(label).long(), torch.tensor(rect).float()
 
 def get_mean_and_std(dataset):
     '''Compute the mean and std value of dataset.'''
@@ -135,5 +138,12 @@ img, label, rect = TrainDataLoader.__getitem__(650)
 
 good examples: 2728, 650, 965, 2814, 634175, 634443
 
+
+data_dir   = '/Users/royhirsch/Documents/GitHub/DetectionProject/ProcessedData'
+TrainDataLoader = BusDataLoader(root_dir=data_dir, BGpad=16, outShape=225)
+img, label, rect = TrainDataLoader.__getitem__(2728)
+img, label, rect = TrainDataLoader.__getitem__(965)
+img, label, rect = TrainDataLoader.__getitem__(2814)
+img, label, rect = TrainDataLoader.__getitem__(650)
 
 '''

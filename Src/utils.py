@@ -29,7 +29,13 @@ def drawRects(orgImg, rects, GTrects=None, numShowRects=100):
 	plt.imshow(cv2.cvtColor(imOut, cv2.COLOR_BGR2RGB))
 	plt.show()
 
-def quick_imshow(img):
+def quick_imshow_numpy(img):
 	plt.figure()
 	plt.imshow(img)
 	plt.show()
+
+def quick_imshow_tensor(img):
+	plt.figure()
+	plt.imshow(np.transpose(img.numpy(), (1, 2, 0)))
+	plt.show()
+
