@@ -6,44 +6,14 @@ from torchvision import datasets, models, transforms
 import sys
 import time
 import copy
+from torch.utils.data.sampler import SubsetRandomSampler
+from torch.utils.data import Dataset, DataLoader
 
 from data_loader import *
 
 num_class = 2
 vgg16_model = models.vgg16(pretrained=True)
-
-# Freeze training for all layers
-for param in vgg16_model.features.parameters():
-	param.require_grad = False
-
-vgg16_feature_map = nn.Sequential(*list(vgg16_model.features._modules.values())[:-1])
-
-# num_features = vgg16_model.classifier[6].in_features         # input size of last fc layer (4096)
-# features = list(vgg16_model.classifier.children())[:-1]      # Remove last layer
-# features.extend([nn.Linear(num_features, len(num_class))])   # Add our layer with 4 outputs
-# vgg16_model.classifier = nn.Sequential(*features)            # Replace the model classifier
-# print(vgg16_model)
-# criterion = nn.CrossEntropyLoss()
-#
-# Observe that all parameters are being optimized
-# optimizer_ft = optim.SGD(vgg16_model.parameters(), lr=0.001, momentum=0.9)
-#
-# Decay LR by a factor of 0.1 every 7 epochs
-# exp_lr_scheduler = lr_scheduler.StepLR(optimizer_ft, step_size=7, gamma=0.1)
-
-# Dataloaders:
-# TrainDataLoader = BusDataLoader(root_dir='/Users/royhirsch/Documents/Study/Current/ComputerVision/project/busesTrain',
-#                                 label_path='/Users/royhirsch/Documents/Study/Current/ComputerVision/project/annotationsTrain.txt',
-#                                 transform=data_transform)
-#
-# TestDataLoader = BusDataLoader(root_dir='/Users/royhirsch/Documents/Study/Current/ComputerVision/project/busesTrain',
-#                                 label_path='/Users/royhirsch/Documents/Study/Current/ComputerVision/project/annotationsTrain.txt',
-#                                 transform=data_transform)
-#
-# model_ft = train_model(vgg16_model, criterion, optimizer_ft, exp_lr_scheduler, [TrainDataLoader, TestDataLoader],
-# 					   num_epochs=25)
-# To save the model state dict
-# torch.save(model_ft.state_dict(), path='')
+data_dir   = '/Users/royhirsch/Documents/GitHub/DetectionProject/ProcessedData'
 
 def train_model(model, criterion, optimizer, scheduler, dataloaders, num_epochs=25):
 	device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -68,7 +38,7 @@ def train_model(model, criterion, optimizer, scheduler, dataloaders, num_epochs=
 			running_corrects = 0
 
 			# Iterate over data.
-			for inputs, labels in dataloaders[phase]:
+			for inputs, labels, rects in dataloaders[phase]:
 				inputs = inputs.to(device)
 				labels = labels.to(device)
 
@@ -113,5 +83,49 @@ def train_model(model, criterion, optimizer, scheduler, dataloaders, num_epochs=
 	# load best model weights
 	model.load_state_dict(best_model_wts)
 	return model
+
+# Freeze training for all layers
+for param in vgg16_model.features.parameters():
+	param.require_grad = False
+
+vgg16_feature_map = nn.Sequential(*list(vgg16_model.features._modules.values())[:-1])
+
+num_features = vgg16_model.classifier[6].in_features         # input size of last fc layer (4096)
+features = list(vgg16_model.classifier.children())[:-1]      # Remove last layer
+features.extend([nn.Linear(num_features, num_class)])        # Add our layer with 4 outputs
+vgg16_model.classifier = nn.Sequential(*features)            # Replace the model classifier
+
+# print(vgg16_model)
+
+criterion = nn.CrossEntropyLoss()
+
+# Observe that all parameters are being optimized
+optimizer_ft = optim.SGD(vgg16_model.parameters(), lr=0.001, momentum=0.9)
+
+# Decay LR by a factor of 0.1 every 7 epochs
+exp_lr_scheduler = lr_scheduler.StepLR(optimizer_ft, step_size=7, gamma=0.1)
+
+# Create data loader
+busLoader = BusDataLoader(root_dir=data_dir, BGpad=16, outShape=225)
+
+test_par = 0.1
+size_dataset = len(busLoader.rect_data)
+ind = list(range(size_dataset))
+test_size = int(test_par * size_dataset)
+
+test_ind = np.random.choice(ind[0:int(2 * test_par * size_dataset)], size=test_size, replace=False)
+train_ind = list(set(ind) - set(test_ind))
+
+train_sampler = SubsetRandomSampler(train_ind)
+test_sampler = SubsetRandomSampler(test_ind)
+
+train_loader = DataLoader(busLoader, batch_size=4, sampler=train_sampler)
+test_loader = DataLoader(busLoader, batch_size=4, sampler=test_sampler)
+
+dataDict = {'train': train_loader, 'val': test_loader}
+model_ft = train_model(vgg16_model, criterion, optimizer_ft, exp_lr_scheduler, dataDict, num_epochs=25)
+# To save the model state dict
+torch.save(model_ft.state_dict(), path='')
+
 
 
