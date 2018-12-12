@@ -9,7 +9,7 @@ from PIL import Image
 import sys
 import cv2 as cv2
 import pickle
-from utils import *
+# from utils import *
 
 class BusDataLoader(Dataset):
     def __init__(self, root_dir, BGpad=16, outShape=225):
