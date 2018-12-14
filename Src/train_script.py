@@ -9,10 +9,9 @@ from torch.utils.data.sampler import SubsetRandomSampler
 from torch.utils.data import Dataset, DataLoader
 from data_loader import *
 
-data_dir   = '/Users/royhirsch/Documents/GitHub/DetectionProject/ProcessedData'
-
 def train_model(model, criterion, optimizer, scheduler, dataloaders, num_epochs=25):
 	device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+	print('Device is ' + str(device))
 	since = time.time()
 
 	for epoch in range(num_epochs):
@@ -21,8 +20,8 @@ def train_model(model, criterion, optimizer, scheduler, dataloaders, num_epochs=
 
 		running_loss_train = 0.0
 		running_corrects_train = 0
-		running_loss_test = 0.0
-		running_corrects_test = 0
+		running_loss_val = 0.0
+		running_corrects_val = 0
 
 		scheduler.step()
 		model.train()  # Set model to training mode
@@ -31,14 +30,16 @@ def train_model(model, criterion, optimizer, scheduler, dataloaders, num_epochs=
 		for inputs, labels, rects in dataloaders['train']:
 			inputs = inputs.to(device)
 			labels = labels.to(device)
-
 			# zero the parameter gradients
 			optimizer.zero_grad()
 
 			# forward
 			outputs = model(inputs)
 			_, preds = torch.max(outputs, 1)
-			loss = criterion(outputs, labels)
+
+			loss = criterion(outputs , labels)
+			# TODO: temporaly print of step loss (Roy)
+			print('Step loss: {}'.format(loss.item()))
 
 			# backward + optimize only if in training phase
 			loss.backward()
@@ -48,29 +49,36 @@ def train_model(model, criterion, optimizer, scheduler, dataloaders, num_epochs=
 			running_loss_train += loss.item() * inputs.size(0)
 			running_corrects_train += torch.sum(preds == labels.data)
 
+			del inputs, labels, outputs, preds
+			torch.cuda.empty_cache()
+
 		epoch_train_loss = running_loss_train / dataloaders['train'].__len__()
 		epoch_train_acc = running_corrects_train.double() / dataloaders['train'].__len__()
 
 		print('Train :: Loss: {:.4f} Acc: {:.4f}'.format(epoch_train_loss, epoch_train_acc))
 
-		##### Evaluate over test data #####
+		##### Evaluate over validation data #####
 		model.eval()
-		for inputs, labels, rects in dataloaders['test']:
+		for inputs, labels, rects in dataloaders['val']:
 			inputs = inputs.to(device)
 			labels = labels.to(device)
 
 			# Only forward - predict test outputs
 			outputs = model(inputs)
 			_, preds = torch.max(outputs, 1)
-			loss = criterion(outputs, labels)
+
+			loss = criterion(outputs , labels)
 
 			# statistics
-			running_loss_test += loss.item() * inputs.size(0)
-			running_corrects_test += torch.sum(preds == labels.data)
+			running_loss_val += loss.item() * inputs.size(0)
+			running_corrects_val += torch.sum(preds == labels.data)
 
-		epoch_test_loss = running_loss_test / dataloaders['test'].__len__()
-		epoch_test_acc = running_corrects_test.double() / dataloaders['test'].__len__()
-		print('Test :: Loss: {:.4f} Acc: {:.4f}'.format(epoch_test_loss, epoch_test_acc))
+			del inputs, labels, outputs, preds
+			torch.cuda.empty_cache()
+
+		epoch_val_loss = running_loss_val / dataloaders['val'].__len__()
+		epoch_val_acc = running_corrects_val.double() / dataloaders['test'].__len__()
+		print('Validation :: Loss: {:.4f} Acc: {:.4f}'.format(epoch_val_loss, epoch_val_acc))
 
 	time_elapsed = time.time() - since
 	print('Training complete in {:.0f}m {:.0f}s'.format(time_elapsed // 60, time_elapsed % 60))
@@ -92,9 +100,10 @@ def create_model(backbone='VGG16', num_class=2):
 
 	# Freeze training for all layers
 	for param in net_model.features.parameters():
-		param.require_grad = False
+		param.requires_grad = False
 
-	vgg16_feature_map = nn.Sequential(*list(net_model.features._modules.values())[:-1])
+	for param in net_model.classifier.parameters():
+		param.requires_grad = False
 
 	# Input size of last fc layer (4096)
 	num_features = net_model.classifier[6].in_features
@@ -105,7 +114,7 @@ def create_model(backbone='VGG16', num_class=2):
 	# Replace the model classifier
 	net_model.classifier = nn.Sequential(*features)
 
-	print('Create {} model:'.format(backbone))
+	print('Created {} model:'.format(backbone))
 	# print(net_model)
 
 	return net_model
@@ -121,7 +130,7 @@ def create_random_subsamples(size_dataset, test_par=0.2):
 	ind = list(range(size_dataset))
 	test_size = int(test_par * size_dataset)
 
-	test_ind = np.random.choice(ind[0:int(2 * test_par * size_dataset)], size=test_size, replace=False)
+	test_ind = np.random.choice(ind, size=test_size, replace=False)
 	train_ind = list(set(ind) - set(test_ind))
 
 	train_sampler = SubsetRandomSampler(train_ind)
@@ -130,28 +139,43 @@ def create_random_subsamples(size_dataset, test_par=0.2):
 	return train_sampler, test_sampler
 
 ''' ############################ Parameters ############################'''
-lr = 0.001
-batch_size = 2
+lr = 0.0001
+batch_size = 32
+# root_data_dir should contain 3 sub-folders: 'train' , 'validation' and  'test
+root_data_dir = '/Users/royhirsch/Documents/GitHub/DetectionProject/ProcessedData'
 
 ''' ############################    Main    ############################'''
 net = create_model()
+# weight_tensor = torch.tensor([1, 100]).float()
 criterion = nn.CrossEntropyLoss()
-
 optimizer = torch.optim.Adam(net.parameters(), lr=lr)
 
 # Decay LR by a factor of 0.1 every n epochs
 exp_lr_scheduler = lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1)
 
-# Create data loader
-busLoader = BusDataLoader(root_dir=data_dir, BGpad=16, outShape=224)
-train_sampler, test_sampler = create_random_subsamples(busLoader.__len__(), test_par=0.2)
+# Create train and validation data loaders
+trainDataLoader = BusDataLoader(root_dir=os.path.join(root_data_dir, 'train'),
+                                data_loader_type='train',
+                                BGpad=16,
+                                outShape=224,
+                                balance_data_size=1,
+                                augment_pos=2)
 
-train_loader = DataLoader(busLoader, batch_size=batch_size, sampler=train_sampler)
-test_loader = DataLoader(busLoader, batch_size=4, sampler=test_sampler)
-dataDict = {'train': train_loader, 'test': test_loader}
-print('Train dataloader contains: {0} samples\nTest dataloader contains: {1} samples'.format(len(train_sampler), len(test_sampler)))
+valDataLoader = BusDataLoader(root_dir=os.path.join(root_data_dir, 'validation'),
+                              data_loader_type='validation',
+                              BGpad=16,
+                              outShape=224,
+                              balance_data_size=0,
+                              augment_pos=0)
 
-print('Begin training !')
+# Pay attention to num_workers , if there are problems -> num_workers=0
+train_loader = DataLoader(trainDataLoader, batch_size=batch_size, shuffle=True, num_workers=4)
+val_loader = DataLoader(valDataLoader, batch_size=4, shuffle=True, num_workers=4)
+
+print('\n################## Begin training ! ################## ')
+print('Number of batches in train epoch is {}\nMay the force be with you!'.format(len(train_loader)))
+
+dataDict = {'train': train_loader, 'val': val_loader}
 model_ft = train_model(net, criterion, optimizer, exp_lr_scheduler, dataDict, num_epochs=25)
 
 # To save the model state dict
