@@ -148,11 +148,11 @@ class BusDataLoader(Dataset):
     def _process_data(self, columns_list_rois=['image_name', 'rect', 'label']):
         data_frame = pd.DataFrame([], columns=columns_list_rois)
 
-        for root, dirs, files in os.walk(self.root_dir):
+        for root, dirs, files in os.walk(os.path.join(self.root_dir, 'rects')):
             for name in files:
                 if re.findall(r'rois_for_.*', name):
                     split_name = name.replace('.', '_').split('_')
-                    rects = pickle.load(open(os.path.join(self.root_dir, name), "rb"))
+                    rects = pickle.load(open(os.path.join(self.root_dir, 'rects', name), "rb"))
 
                     temp = pd.DataFrame([[split_name[2], rect[:-1], rect[-1]] for rect in rects], columns=columns_list_rois)
                     data_frame = data_frame.append(temp, ignore_index=True)
@@ -163,11 +163,11 @@ class BusDataLoader(Dataset):
         data_frame = pd.DataFrame([], columns=columns_list)
         i = 0
 
-        for root, dirs, files in os.walk(self.root_dir):
+        for root, dirs, files in os.walk((os.path.join(self.root_dir, 'images'))):
             for name in files:
                 if re.findall(r'resized_img_.*', name):
                     split_name = name.replace('.', '_').split('_')
-                    img = pickle.load(open(os.path.join(self.root_dir, name), "rb"))
+                    img = pickle.load(open(os.path.join(self.root_dir, 'images', name), "rb"))
                     # Convert from BGR to RGB (reverse the depth dim order)
                     img = img[...,::-1]
 
