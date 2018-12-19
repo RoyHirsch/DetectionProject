@@ -177,6 +177,9 @@ class BusDataLoader(Dataset):
                     i += 1
         return data_frame
 
+    def get_ind_of_positive_samples(self):
+        return np.where(self.rect_data['cls_label'] == 1)
+
     def __len__(self):
         return len(self.rect_data)
 
@@ -238,7 +241,7 @@ Example of call to the iterator
 img, label, rect = TrainDataLoader.__getitem__(650)
 
 good examples: 2728, 650, 965, 2814, 634175, 634443
-data_dir   = '/Users/royhirsch/Documents/GitHub/DetectionProject/ProcessedData'
+data_dir   = '/Users/royhirsch/Documents/GitHub/ProcessedData/validation'
 TrainDataLoader = BusDataLoader(root_dir=data_dir, BGpad=16, outShape=225)
 img, cls_label, rg_label, rect = TrainDataLoader.__getitem__(2728)
 img, cls_label, rg_label, rect = TrainDataLoader.__getitem__(965)

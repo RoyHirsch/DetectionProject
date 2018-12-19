@@ -9,6 +9,7 @@ from torch.utils.data.sampler import SubsetRandomSampler
 from torch.utils.data import Dataset, DataLoader
 from tqdm import tqdm
 from data_loader import *
+from RCNN import *
 
 def train_model(model, criterion, optimizer, scheduler, dataloaders, save_dir, num_epochs=25):
 
@@ -93,7 +94,7 @@ def train_model(model, criterion, optimizer, scheduler, dataloaders, save_dir, n
 			if epoch >= 10 and current_epoch_acc > ls_epoch_acc[-2][1] and current_epoch_acc > ls_epoch_acc[-3][1]:
 				filename = 'checkpoint_epoch_{}_val_loss_{}.pr'.format(epoch, str(round(current_epoch_acc, 4)))
 				checkpoint_path = os.path.join(save_dir, filename)
-				torch.save(model.state_dict(), filename)
+				torch.save(model.state_dict(), checkpoint_path)
 				print('Saved model checkpoint with val_acc: {}'.format(str(round(current_epoch_acc, 4))))
 
 	time_elapsed = time.time() - since
@@ -101,67 +102,15 @@ def train_model(model, criterion, optimizer, scheduler, dataloaders, save_dir, n
 
 	return model
 
-def create_model(backbone='VGG16', num_class=2):
-	'''
-
-	:param backbone: currently only VGG16 will be generalized
-	:param num_class:
-	:return:
-	'''
-	if backbone == 'VGG16':
-		net_model = models.vgg16(pretrained=True)
-
-	else:
-		raise ValueError('Invalid backbone net model')
-
-	# Freeze training for all layers
-	for param in net_model.features.parameters():
-		param.requires_grad = False
-
-	for param in net_model.classifier.parameters():
-		param.requires_grad = False
-
-	# Input size of last fc layer (4096)
-	num_features = net_model.classifier[6].in_features
-	# Remove last layer
-	features = list(net_model.classifier.children())[:-1]
-	# Add our layer with 4 outputs
-	features.extend([nn.Linear(num_features, num_class)])
-	# Replace the model classifier
-	net_model.classifier = nn.Sequential(*features)
-
-	print('Created {} model:'.format(backbone))
-	# print(net_model)
-
-	return net_model
-
-def create_random_subsamples(size_dataset, test_par=0.2):
-	'''
-	creates SubsetRandomSampler object per train and test dataloaders
-
-	:param size_dataset: the total number of samples in the dataset
-	:param test_par: between [0,1] parentage of data to split for test
-	:return:
-	'''
-	ind = list(range(size_dataset))
-	test_size = int(test_par * size_dataset)
-
-	test_ind = np.random.choice(ind, size=test_size, replace=False)
-	train_ind = list(set(ind) - set(test_ind))
-
-	train_sampler = SubsetRandomSampler(train_ind)
-	test_sampler = SubsetRandomSampler(test_ind)
-
-	return train_sampler, test_sampler
 
 ''' ############################ Parameters ############################'''
 lr = 0.001
 batch_size = 32
 # root_data_dir should contain 3 sub-folders: 'train' , 'validation' and  'test
-root_data_dir = '/Users/royhirsch/Documents/GitHub/DetectionProject/ProcessedData'
+root_data_dir = '/Users/royhirsch/Documents/GitHub/ProcessedData'
 
 ''' ############################    Main    ############################'''
-net = create_model()
+net = RCNN()
 # weight_tensor = torch.tensor([1, 100]).float()
 criterion = nn.CrossEntropyLoss()
 optimizer = torch.optim.Adam(net.parameters(), lr=lr)
