@@ -10,7 +10,16 @@ from torch.utils.data import Dataset, DataLoader
 from tqdm import tqdm
 from data_loader import *
 
-def train_model(model, criterion, optimizer, scheduler, dataloaders, num_epochs=25):
+def train_model(model, criterion, optimizer, scheduler, dataloaders, save_dir, num_epochs=25):
+
+	def accuracy(outputs, labels):
+		'''
+			Simple function to calculate the accuracy per minibatch
+		'''
+		_, preds = torch.max(outputs, 1)
+		acc = (preds == labels).sum().float()*100 / labels.shape[0]
+		return acc.item()
+
 	device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 	print('Device is ' + str(device))
 	model.to(device)
@@ -22,28 +31,26 @@ def train_model(model, criterion, optimizer, scheduler, dataloaders, num_epochs=
 		print('Epoch {}/{}'.format(epoch, num_epochs - 1))
 		print('-' * 10)
 
-		running_loss_train = 0.0
-		running_corrects_train = 0
-		running_loss_val = 0.0
-		running_corrects_val = 0
+		# Initialize statistics per epoch
+		ls_acc_train = []
+		ls_loss_train = []
+		ls_loss_val = []
+		ls_acc_val = []
 
 		scheduler.step()
 		model.train()  # Set model to training mode
 
-		ls_loss_train = []
 		##### Train loop for an epoch #####
-		for inputs, labels, rects in tqdm(dataloaders['train'], desc='Train epoch %d' % epoch):
+		for inputs, cls_labels, rg_labels, rects in tqdm(dataloaders['train'], desc='Train epoch %d' % epoch):
 			start_epoch = time.time()
 			inputs = inputs.to(device)
-			labels = labels.to(device)
+			cls_labels = cls_labels.to(device)
 			# zero the parameter gradients
 			optimizer.zero_grad()
 
 			# forward
 			outputs = model(inputs)
-			_, preds = torch.max(outputs, 1)
-
-			loss = criterion(outputs , labels)
+			loss = criterion(outputs, cls_labels)
 
 			# backward + optimize only if in training phase
 			loss.backward()
@@ -51,48 +58,43 @@ def train_model(model, criterion, optimizer, scheduler, dataloaders, num_epochs=
 
 			# statistics
 			ls_loss_train.append(loss.item())
-			running_corrects_train += torch.sum(preds == labels.data)
+			ls_acc_train.append(accuracy(outputs, cls_labels))
 
-			del inputs, labels, outputs, preds
+			del inputs, cls_labels, rg_labels, rects, outputs
 			torch.cuda.empty_cache()
-
-		epoch_train_loss = np.mean(ls_loss_train)
-		epoch_train_acc = running_corrects_train.double() / dataloaders['train'].__len__()
 
 		stop_epoch = time.time() - start_epoch
 		print('Train :: Loss: {:.4f} Acc: {:.4f} Time: {:.0f}m {:.0f}s'.format(
-			epoch_train_loss, epoch_train_acc, stop_epoch // 60, stop_epoch % 60))
+			np.mean(ls_loss_train), np.mean(ls_acc_train), stop_epoch // 60, stop_epoch % 60))
 
 		##### Evaluate over validation data #####
-		ls_loss_val = []
-		model.eval()
-		for inputs, labels, rects in tqdm(dataloaders['val'], desc='Validation epoch %d' % epoch):
-			inputs = inputs.to(device)
-			labels = labels.to(device)
+		if epoch % 5 == 0:
+			model.eval()
+			for inputs, cls_labels, rg_labels, rects in tqdm(dataloaders['val'], desc='Validation epoch %d' % epoch):
+				inputs = inputs.to(device)
+				cls_labels = cls_labels.to(device)
 
-			# Only forward - predict test outputs
-			outputs = model(inputs)
-			_, preds = torch.max(outputs, 1)
+				# Only forward - predict test outputs
+				outputs = model(inputs)
+				loss = criterion(outputs, cls_labels)
 
-			loss = criterion(outputs, labels)
+				# statistics
+				ls_loss_val.append(loss.item())
+				ls_acc_val.append(accuracy(outputs, cls_labels))
 
-			# statistics
-			ls_loss_val.append(loss.item())
-			running_corrects_val += torch.sum(preds == labels.data)
+				del inputs, cls_labels, rg_labels, rects
+				torch.cuda.empty_cache()
 
-			del inputs, labels, outputs, preds
-			torch.cuda.empty_cache()
+			current_epoch_acc = np.mean(ls_acc_val)
+			print('Validation :: Loss: {:.4f} Acc: {:.4f}'.format(np.mean(ls_loss_val), current_epoch_acc))
+			ls_epoch_acc.append((np.mean(ls_acc_train), current_epoch_acc))
 
-		epoch_val_loss = np.mean(ls_loss_val)
-		epoch_val_acc = running_corrects_val.double() / dataloaders['test'].__len__()
-		print('Validation :: Loss: {:.4f} Acc: {:.4f}'.format(epoch_val_loss, epoch_val_acc))
-		ls_epoch_acc.append((epoch_train_acc, epoch_val_acc))
-
-		# Simple method for saving parameters (if current val_acc better than the previous two)
-		if epoch > 1 and epoch_val_acc > ls_epoch_acc[epoch-1][1] and epoch_val_acc > ls_epoch_acc[epoch-2][1]:
-			filename = 'checkpoint_epoch_{}_val_loss_{}.pr'.format(epoch, str(round(epoch_val_acc, 4)))
-			torch.save(model_ft.state_dict(), path=filename)
-			print('Saved model checkpoint with val_acc: {}'.format(str(round(epoch_val_acc, 4))))
+			# Simple method for saving parameters (if current val_acc better than the previous two)
+			if epoch >= 10 and current_epoch_acc > ls_epoch_acc[-2][1] and current_epoch_acc > ls_epoch_acc[-3][1]:
+				filename = 'checkpoint_epoch_{}_val_loss_{}.pr'.format(epoch, str(round(current_epoch_acc, 4)))
+				checkpoint_path = os.path.join(save_dir, filename)
+				torch.save(model.state_dict(), filename)
+				print('Saved model checkpoint with val_acc: {}'.format(str(round(current_epoch_acc, 4))))
 
 	time_elapsed = time.time() - since
 	print('Training complete in {:.0f}m {:.0f}s'.format(time_elapsed // 60, time_elapsed % 60))
@@ -153,10 +155,10 @@ def create_random_subsamples(size_dataset, test_par=0.2):
 	return train_sampler, test_sampler
 
 ''' ############################ Parameters ############################'''
-lr = 0.0005
+lr = 0.001
 batch_size = 32
 # root_data_dir should contain 3 sub-folders: 'train' , 'validation' and  'test
-root_data_dir = '/Users/royhirsch/Documents/GitHub/ProcessedDataFast'
+root_data_dir = '/Users/royhirsch/Documents/GitHub/DetectionProject/ProcessedData'
 
 ''' ############################    Main    ############################'''
 net = create_model()
@@ -164,8 +166,8 @@ net = create_model()
 criterion = nn.CrossEntropyLoss()
 optimizer = torch.optim.Adam(net.parameters(), lr=lr)
 
-# Decay LR by a factor of 0.1 every n epochs
-exp_lr_scheduler = lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1)
+# Decay LR by a factor of 0.1 * lr every n epochs
+exp_lr_scheduler = lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.0001)
 
 # Create train and validation data loaders
 trainDataLoader = BusDataLoader(root_dir=os.path.join(root_data_dir, 'train'),
@@ -184,16 +186,16 @@ valDataLoader = BusDataLoader(root_dir=os.path.join(root_data_dir, 'validation')
 
 # Pay attention to num_workers , if there are problems -> num_workers=0
 train_loader = DataLoader(trainDataLoader, batch_size=batch_size, shuffle=True, num_workers=4)
-val_loader = DataLoader(valDataLoader, batch_size=4, shuffle=True, num_workers=4)
+val_loader = DataLoader(valDataLoader, batch_size=batch_size, shuffle=True, num_workers=4)
 
 print('\n################## Begin training ! ################## ')
-print('Number of batches in train epoch is {}\nMay the force be with you!'.format(len(train_loader)))
+print('Number of batches in train epoch is {}'.format(len(train_loader)))
 
 dataDict = {'train': train_loader, 'val': val_loader}
-model_ft = train_model(net, criterion, optimizer, exp_lr_scheduler, dataDict, num_epochs=25)
+model_ft = train_model(net, criterion, optimizer, exp_lr_scheduler, dataDict, save_dir='', num_epochs=50)
 
 # To save the model state dict
-torch.save(model_ft.state_dict(), path='')
+torch.save(model_ft.state_dict(), '')
 
 
 

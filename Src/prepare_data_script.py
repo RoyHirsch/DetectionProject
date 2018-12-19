@@ -85,16 +85,19 @@ def intersection_over_union(rectA, rectB):
 def btach_intersection_over_union(rectA, rectB):
     # rectA in a batch of rect
     # rectB my also contain many labels
-    res = []
+    cls_label = []
+    rg_label = []
     for itemA in rectA:
         grades = []
         for itemB in rectB:
-            grades.append(intersection_over_union(itemA, itemB))
-        if any([grade >= 0.5 for grade in grades]):
-            res.append(1)
+            grades.append((intersection_over_union(itemA, itemB), itemB))
+        if any([grade >= 0.5 for grade, _ in grades]):
+            cls_label.append(1)
+            rg_label.append(itemB)
         else:
-            res.append(0)
-    return np.array(res)
+            cls_label.append(0)
+            rg_label.append([0, 0, 0, 0, 0])
+    return np.array(cls_label), np.array(rg_label)
 
 ''' ###################################### MAIN SCRIPT ###################################### '''
 # read labels file:
@@ -131,10 +134,10 @@ for root, dirs, files in os.walk(data_dir):
 
         # Create labels
         gt_labels = list(labels_raw.loc[labels_raw['image_name'] == name]['rois'])[0]
-        labels = btach_intersection_over_union(rois, gt_labels)
+        cls_labels, reg_labels = btach_intersection_over_union(rois, gt_labels)
         # drawRects(im, rois, gt_labels) ### debug ###
-        print('Number of positive labels: {}'.format(np.sum(labels)))
-        rois_n_labels = np.column_stack((rois, labels))
+        print('Number of positive labels: {}'.format(np.sum(cls_labels)))
+        rois_n_labels = np.column_stack((rois, cls_labels, reg_labels))
 
         # Save as pickle file
         name_split = name.split('.')[0]
