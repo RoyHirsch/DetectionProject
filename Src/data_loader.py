@@ -10,6 +10,7 @@ import sys
 import cv2 as cv2
 import pickle
 # from utils import *
+from torch.utils.data.sampler import SubsetRandomSampler
 
 class BusDataLoader(Dataset):
     def __init__(self, root_dir, data_loader_type='', BGpad=16, outShape=225, balance_data_size=2, augment_pos=0):
@@ -178,8 +179,9 @@ class BusDataLoader(Dataset):
         return data_frame
 
     def get_ind_of_positive_samples(self):
-        return np.where(self.rect_data['cls_label'] == 1)
-
+        res = np.where(self.rect_data['cls_label'] == 1)
+        return res[0].tolist()
+    
     def __len__(self):
         return len(self.rect_data)
 
