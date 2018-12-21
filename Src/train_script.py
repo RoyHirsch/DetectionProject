@@ -42,27 +42,32 @@ def train_model(model, criterion, optimizer, scheduler, dataloaders, save_dir, n
 		model.train()  # Set model to training mode
 
 		##### Train loop for an epoch #####
-		for inputs, cls_labels, rg_labels, rects in tqdm(dataloaders['train'], desc='Train epoch %d' % epoch):
-			start_epoch = time.time()
-			inputs = inputs.to(device)
-			cls_labels = cls_labels.to(device)
-			# zero the parameter gradients
-			optimizer.zero_grad()
+		with tqdm(total=len(dataloaders['train']), file=sys.stdout) as pbar:
+			for inputs, cls_labels, rg_labels, rects in dataloaders['train']:
 
-			# forward
-			outputs = model(inputs)
-			loss = criterion(outputs, cls_labels)
+				pbar.set_description('Train epoch %d' % epoch)
+				pbar.update(1)
 
-			# backward + optimize only if in training phase
-			loss.backward()
-			optimizer.step()
+				start_epoch = time.time()
+				inputs = inputs.to(device)
+				cls_labels = cls_labels.to(device)
+				# zero the parameter gradients
+				optimizer.zero_grad()
 
-			# statistics
-			ls_loss_train.append(loss.item())
-			ls_acc_train.append(accuracy(outputs, cls_labels))
+				# forward
+				outputs = model(inputs)
+				loss = criterion(outputs, cls_labels)
 
-			del inputs, cls_labels, rg_labels, rects, outputs
-			torch.cuda.empty_cache()
+				# backward + optimize only if in training phase
+				loss.backward()
+				optimizer.step()
+
+				# statistics
+				ls_loss_train.append(loss.item())
+				ls_acc_train.append(accuracy(outputs, cls_labels))
+
+				del inputs, cls_labels, rg_labels, rects, outputs
+				torch.cuda.empty_cache()
 
 		stop_epoch = time.time() - start_epoch
 		print('Train :: Loss: {:.4f} Acc: {:.4f} Time: {:.0f}m {:.0f}s'.format(
@@ -71,20 +76,24 @@ def train_model(model, criterion, optimizer, scheduler, dataloaders, save_dir, n
 		##### Evaluate over validation data #####
 		if epoch % 5 == 0:
 			model.eval()
-			for inputs, cls_labels, rg_labels, rects in tqdm(dataloaders['val'], desc='Validation epoch %d' % epoch):
-				inputs = inputs.to(device)
-				cls_labels = cls_labels.to(device)
+			with tqdm(total=len(dataloaders['val']), file=sys.stdout) as pbar:
+				for inputs, cls_labels, rg_labels, rects in dataloaders['val']:
+					pbar.set_description('Validation epoch %d' % epoch)
+					pbar.update(1)
 
-				# Only forward - predict test outputs
-				outputs = model(inputs)
-				loss = criterion(outputs, cls_labels)
+					inputs = inputs.to(device)
+					cls_labels = cls_labels.to(device)
 
-				# statistics
-				ls_loss_val.append(loss.item())
-				ls_acc_val.append(accuracy(outputs, cls_labels))
+					# Only forward - predict test outputs
+					outputs = model(inputs)
+					loss = criterion(outputs, cls_labels)
 
-				del inputs, cls_labels, rg_labels, rects
-				torch.cuda.empty_cache()
+					# statistics
+					ls_loss_val.append(loss.item())
+					ls_acc_val.append(accuracy(outputs, cls_labels))
+
+					del inputs, cls_labels, rg_labels, rects
+					torch.cuda.empty_cache()
 
 			current_epoch_acc = np.mean(ls_acc_val)
 			print('Validation :: Loss: {:.4f} Acc: {:.4f}'.format(np.mean(ls_loss_val), current_epoch_acc))
