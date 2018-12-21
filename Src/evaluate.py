@@ -5,6 +5,7 @@ import math
 from torch.utils.data import Dataset, DataLoader, SubsetRandomSampler
 from tqdm import tqdm
 import numpy as np
+import pandas as pd
 import time
 from prepare_data_script import *
 from data_loader import *
@@ -14,6 +15,7 @@ from RCNN import *
 batch_size = 32
 root_data_dir = '/Users/royhirsch/Documents/GitHub/ProcessedData'
 checkpoint_path = '/Users/royhirsch/Downloads/checkpoint_epoch_5_val_loss_96.3821.pr'
+label_path = '/Users/royhirsch/Documents/GitHub/DetectionProject/annotationsTrain.txt'
 scale = 0.25
 nms_thres = 0.5
 
@@ -88,6 +90,54 @@ def statistics(outputs, labels):
 	return per, rec, F1
 
 
+def get_GT_labels(label_path):
+	# read labels file:
+	columns_list = ['image_name', 'rois']
+	labels_raw = pd.DataFrame([], columns=columns_list)
+	with open(label_path) as fp:
+		for i, line in enumerate(fp):
+			tmp = line.split(':')
+			file_name = tmp[0]
+			rois = list(tmp[1].replace('],[', ' ').replace('[', ' ').replace(']', ' ').split())
+			rois = [list(map(int, item.split(','))) for item in rois]
+
+			scale_rois = []
+			for roi in rois:
+				scale_roi = [int(num * scale) for num in roi[:-1]]
+				scale_roi.append(roi[-1])
+				scale_rois.append(scale_roi)
+			labels_raw.loc[i] = [file_name, scale_rois]
+	return labels_raw
+
+
+def iou(rectA, rectB):
+	x, y, h, w = rectA
+	boxA = [x, y, x + w, y + h]
+	x, y, h, w, = rectB
+	boxB = [x, y, x + w, y + h]
+	# determine the (x, y)-coordinates of the intersection rectangle
+	xA = max(boxA[0], boxB[0])
+	yA = max(boxA[1], boxB[1])
+	xB = min(boxA[2], boxB[2])
+	yB = min(boxA[3], boxB[3])
+
+	# compute the area of intersection rectangle
+	interArea = max(0, xB - xA + 1) * max(0, yB - yA + 1)
+
+	# compute the area of both the prediction and ground-truth
+	# rectangles
+	boxAArea = (boxA[2] - boxA[0] + 1) * (boxA[3] - boxA[1] + 1)
+	boxBArea = (boxB[2] - boxB[0] + 1) * (boxB[3] - boxB[1] + 1)
+
+	# compute the intersection over union by taking the intersection
+	# area and dividing it by the sum of prediction + ground-truth
+	# areas - the interesection area
+	iou = interArea / float(boxAArea + boxBArea - interArea)
+
+	# return the intersection over union value
+	return iou
+
+
 ''' ############################    Main    ############################'''
 net = RCNN()
 net.load_state_dict(torch.load(checkpoint_path, map_location='cpu'))
@@ -103,6 +153,7 @@ testDataLoader = BusDataLoader(root_dir=os.path.join(root_data_dir, 'test'),
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 print('Device is ' + str(device))
 net.to(device)
+label_df = get_GT_labels(label_path)
 
 # Initialize statistics data structures
 ls_acc = []
@@ -154,8 +205,9 @@ for name in image_name_ls:
 			torch.cuda.empty_cache()
 
 	time_elapsed = time.time() - since
-	print('Evaluation accuracy :: {:.4f} '.format(np.mean(ls_acc)))
-	print('Precision :: {:.4f}\nRecall :: {:.4f}\nF1 :: {:.4f}'.format(np.mean(per_ls), np.mean(rec_ls), np.mean(F1_ls)))
+	print('Evaluation against downloader labels:  accuracy :: {:.4f} '.format(np.mean(ls_acc)))
+	print(
+		'Precision :: {:.4f}\nRecall :: {:.4f}\nF1 :: {:.4f}'.format(np.mean(per_ls), np.mean(rec_ls), np.mean(F1_ls)))
 	all_res_dict['F1'] = np.mean(F1_ls)
 	all_res_dict['per'] = np.mean(per_ls)
 	all_res_dict['rec'] = np.mean(rec_ls)
@@ -169,6 +221,24 @@ for name in image_name_ls:
 	# NMS
 	final_rects = nms(np.array(filtered_rects), nms_thres)
 	print('Evaluation of {} complete in {:.0f}m {:.0f}s'.format(name, time_elapsed // 60, time_elapsed % 60))
+
+	# Evaluate against the GT
+	gt_image = label_df.loc[label_df['image_name'] == name + '.JPG']['rois'].values[0]
+	print('GT got {} rects and we predicted {} after NMS'.format(len(gt_image), len(final_rects)))
+
+	iou_list = []
+	for pred in final_rects:
+		pred_score = pred[-1]
+		pred = [int(num) for num in pred[:-1]]
+
+		# in case of multiple gt rects, measure only the iou of predicted rect with
+		# the closest gt rect
+		iou_temp = []
+		for gt in gt_image:
+			gt = gt[:-1]
+			iou_temp.append(iou(gt, pred))
+		iou_list.append(np.max(iou_temp))
+		print('For predicted rect {} with score {} got IOU: {}'.format(pred, pred_score, iou_list[-1]))
 
 # Show the results
 # final_rects_view = final_rects[:, :-1].astype(np.int32)
