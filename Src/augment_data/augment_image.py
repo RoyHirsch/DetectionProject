@@ -2,18 +2,14 @@ import numpy as np
 import pandas as pd
 import cv2
 # import matplotlib.pyplot as plt
-import pickle
 import os
-import torch
 from torch.utils.data import Dataset, DataLoader
-import re
+import torch
 import pandas as pd
-import numpy as np
-from torchvision import transforms, datasets
-from bbox_util import *
 from data_aug import *
 import imgaug as ia
 from imgaug import augmenters as iaa
+from torchvision import datasets, models, transforms
 
 '''
     Simple pipline to yield transformed bus images
@@ -36,6 +32,9 @@ class AugBusDataLoader(Dataset):
                               iaa.Sometimes(0.25, iaa.Affine(translate_px={"x": 40, "y": 60}))
                               ])
 
+        self.transform = transforms.Compose([
+                         transforms.ToPILImage(),
+                         transforms.ToTensor()])
 
     def _get_raw_images(self):
         data_frame = pd.DataFrame([], columns=['image_name', 'image'])
@@ -83,7 +82,7 @@ class AugBusDataLoader(Dataset):
         return labels_raw
 
     def __len__(self):
-        return len(self.images_n_gt)
+        return len(self.gt_images)
 
     def __getitem__(self, idx):
         im_name, img = self.gt_images.loc[idx]
@@ -103,8 +102,12 @@ class AugBusDataLoader(Dataset):
         image_aug = seq_det.augment_images([img])[0]
         bbs_aug = seq_det.augment_bounding_boxes([bbs])[0]
 
+        image = self.transform(image_aug)
+        labels = torch.tensor(bbs_aug.to_xyxy_array()).long()
+
         # img_, bboxes_ = self.seq(img.copy(), np_rect.copy())
-        return image_aug, bbs_aug
+
+        return image, labels, bbs_aug
 
 # From [xTopLeft,yTopLeft,w,h,c] to [xTopLeft,yTopLeft,xBottomRight,yBottomRight,c]
 def conv_rect_to_opos_points(rect):
@@ -114,16 +117,22 @@ def conv_rect_to_opos_points(rect):
         return [rect[0], rect[1], rect[0] + rect[2], rect[1] + rect[3], rect[4]]
 
 def draw_img_augment(img, bbs):
+    if type(img) == torch.Tensor:
+        img = img.numpy()
+        img = np.swapaxes(img, 0, -1)
+        img = np.swapaxes(img, 0, 1)
     img_mod = bbs.draw_on_image(img.copy(), thickness=2)
     plt.figure()
     plt.imshow(img_mod)
-
 '''
 ################ MAIN ################
 images_dir = '/Users/royhirsch/Documents/Study/Current/ComputerVision/project/busesTrain'
 gt_labels_path = '/Users/royhirsch/Documents/Study/Current/ComputerVision/project/annotationsTrain.txt'
 aug_data = AugBusDataLoader(images_dir, gt_labels_path)
-i, bb =  aug_data.__getitem__(12)
-i, bb =  aug_data.__getitem__(12)
+i, bb, bbt =  aug_data.__getitem__(12)
+i, bb, bbt =  aug_data.__getitem__(12)
 '''
+
+
+
 
