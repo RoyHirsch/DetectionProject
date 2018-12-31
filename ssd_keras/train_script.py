@@ -95,7 +95,7 @@ if __name__ == '__main__':
 	                nms_max_output_size=400)
 
 	#Load the trained weights into the model.
-	weights_source_file = h5py.File(args.weights_path, 'r')
+	# weights_source_file = h5py.File(args.weights_path, 'r')
 	model.load_weights(args.weights_path, by_name=True)
 
 	#Compile the model
@@ -167,7 +167,7 @@ if __name__ == '__main__':
 	                                                  'encoded_labels'},
 	                                         keep_images_without_gt=False)
 
-	val_generator = val_dataset.generate(batch_size=batch_size,
+	val_generator = val_dataset.generate(batch_size=2,
 	                                     shuffle=True,
 	                                     transformations=[ssd_data_augmentation],
 	                                     label_encoder=ssd_input_encoder,
