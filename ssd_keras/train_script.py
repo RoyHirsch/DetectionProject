@@ -186,7 +186,8 @@ if __name__ == '__main__':
 	# 3: Define model callbacks.
 	###############################################################################
 	model_checkpoint = ModelCheckpoint(
-		filepath='ssd_epoch-{epoch:02d}_loss-{loss:.4f}_val_loss-{val_loss:.4f}.h5',
+		# filepath='ssd_epoch-{epoch:02d}_loss-{loss:.4f}_val_loss-{val_loss:.4f}.h5',
+		filepath='ssd_epoch-{epoch:02d}_loss-{loss:.4f}.h5',
 		monitor='val_loss',
 		verbose=1,
 		save_best_only=True,
@@ -204,10 +205,10 @@ if __name__ == '__main__':
 
 	terminate_on_nan = TerminateOnNaN()
 
-	callbacks = [model_checkpoint,
-	             csv_logger,
+	callbacks = [model_checkpoint]
+	             # csv_logger,
 	             # learning_rate_scheduler,
-	             terminate_on_nan]
+	             # terminate_on_nan]
 
 	###############################################################################
 	# 4: Train
