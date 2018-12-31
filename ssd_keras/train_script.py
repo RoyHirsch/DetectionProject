@@ -218,10 +218,10 @@ if __name__ == '__main__':
 	                              steps_per_epoch=steps_per_epoch,
 	                              epochs=args.num_epochs,
 	                              callbacks=callbacks,
-	                              workers=3,
-	                              use_multiprocessing=True,
-	                              validation_data=val_generator,
-	                              validation_steps=200, #TODO its' just a number...
+	                              # workers=3,
+	                              # use_multiprocessing=True,
+	                              # validation_data=val_generator,
+	                              # validation_steps=200, #TODO its' just a number...
 	                              initial_epoch=initial_epoch)
 
 '''
