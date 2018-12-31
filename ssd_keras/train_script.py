@@ -206,9 +206,9 @@ if __name__ == '__main__':
 	terminate_on_nan = TerminateOnNaN()
 
 	callbacks = [model_checkpoint]
-	             # csv_logger,
-	             # learning_rate_scheduler,
-	             # terminate_on_nan]
+	# csv_logger,
+	#  learning_rate_scheduler,
+	#  terminate_on_nan]
 
 	###############################################################################
 	# 4: Train
@@ -221,8 +221,8 @@ if __name__ == '__main__':
 	                              callbacks=callbacks,
 	                              # workers=3,
 	                              # use_multiprocessing=True,
-	                              # validation_data=val_generator,
-	                              # validation_steps=200, #TODO its' just a number...
+	                              validation_data=val_generator,
+	                              validation_steps=200, #TODO its' just a number...
 	                              initial_epoch=initial_epoch)
 
 '''
