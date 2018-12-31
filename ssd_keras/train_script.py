@@ -169,9 +169,8 @@ if __name__ == '__main__':
 	                                         keep_images_without_gt=False)
 
 	val_generator = val_dataset.generate(batch_size=batch_size,
-	                                     shuffle=False,
-	                                     transformations=convert_to_3_channels,
-	                                                      # resize],
+	                                     shuffle=True,
+	                                     transformations=[ssd_data_augmentation],
 	                                     label_encoder=ssd_input_encoder,
 	                                     returns={'processed_images',
 	                                              'encoded_labels'},
