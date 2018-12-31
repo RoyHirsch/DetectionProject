@@ -21,6 +21,7 @@ if __name__ == '__main__':
 	parser.add_argument('--train_label_path', default='', type=str, help='path to train labels csv')
 	parser.add_argument('--val_label_path', default='', type=str, help='path to val labels csv')
 	parser.add_argument('--num_epochs', default=10, type=int, help='num of epochs to train')
+	parser.add_argument('--steps_per_epoch', default=500, type=int, help='staps per epoch')
 	parser.add_argument('--batch_size', default=32, type=int, help='batch size')
 	parser.add_argument('--lr', default=0.001, type=float, help='lr default is 0.001')
 
@@ -208,7 +209,7 @@ if __name__ == '__main__':
 	# 4: Train
 	###############################################################################
 	initial_epoch = 0
-	steps_per_epoch = 1000
+	steps_per_epoch = args.steps_per_epoch
 	history = model.fit_generator(generator=train_generator,
 	                              steps_per_epoch=steps_per_epoch,
 	                              epochs=args.num_epochs,
