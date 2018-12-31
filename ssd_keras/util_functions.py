@@ -127,7 +127,9 @@ def drop_GT_notaions_to_scv(source_notaiton_file, dest_notaiton_file_path='', ou
 				# Write to CSV in format:
 				# ['image file name', 'xmin', 'ymin', 'xmax', 'ymax', 'class ID']
 				temp_ls = []
-				temp_ls.append(file_name)
+				split = file_name.split('.')[0]
+				reformat_file_name = split + '.jpg'
+				temp_ls.append(reformat_file_name)
 				# Create unified list in the desired length
 				roi_row = temp_ls + roi_scaled
 				processed_data.loc[i] = roi_row
