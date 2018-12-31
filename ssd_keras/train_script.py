@@ -6,7 +6,8 @@ import h5py
 from keras_loss_function.keras_ssd_loss import SSDLoss
 from ssd_encoder_decoder.ssd_input_encoder import SSDInputEncoder
 from data_generator.data_augmentation_chain_original_ssd import SSDDataAugmentation
-
+import matplotlib.pyplot as plt
+import numpy as np
 from data_generator.object_detection_2d_data_generator import DataGenerator
 from data_generator.object_detection_2d_photometric_ops import ConvertTo3Channels
 from data_generator.object_detection_2d_geometric_ops import Resize
@@ -185,8 +186,7 @@ if __name__ == '__main__':
 	# 3: Define model callbacks.
 	###############################################################################
 	model_checkpoint = ModelCheckpoint(
-		# filepath='ssd_epoch-{epoch:02d}_loss-{loss:.4f}_val_loss-{val_loss:.4f}.h5',
-		filepath='ssd_epoch-{epoch:02d}_loss-{loss:.4f}.h5',
+		filepath='ssd_epoch-{epoch:02d}_loss-{loss:.4f}_val_loss-{val_loss:.4f}.h5',
 		monitor='val_loss',
 		verbose=1,
 		save_best_only=True,
