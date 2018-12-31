@@ -23,9 +23,14 @@ if __name__ == '__main__':
 	parser.add_argument('--num_epochs', default=10, type=int, help='num of epochs to train')
 	parser.add_argument('--steps_per_epoch', default=500, type=int, help='staps per epoch')
 	parser.add_argument('--batch_size', default=32, type=int, help='batch size')
-	parser.add_argument('--lr', default=0.001, type=float, help='lr default is 0.001')
+	parser.add_argument('--lr', default=0.00001, type=float, help='lr default is 0.001')
 
 	args = parser.parse_args()
+
+	args_dict = vars(args)
+	print('Model params are:')
+	for k, v in args_dict.items():
+		print(k + ' : ' + str(v))
 
 	###############################################################################
 	# 0: Pre-defined parameters
@@ -65,7 +70,6 @@ if __name__ == '__main__':
 	# The variances by which the encoded target coordinates are divided as in the original implementation
 	variances = [0.1, 0.1, 0.2, 0.2]
 	normalize_coords = True
-
 
 	###############################################################################
 	# 1: Build the Keras model
@@ -128,7 +132,7 @@ if __name__ == '__main__':
 	                                            background=mean_color)
 	# For the validation generator:
 	convert_to_3_channels = ConvertTo3Channels()
-	resize = Resize(height=img_height, width=img_width)
+	# resize = Resize(height=img_height, width=img_width)
 
 	#Instantiate an encoder that can encode ground truth labels into the format needed by the SSD loss function.
 	predictor_sizes = [model.get_layer('conv4_3_norm_mbox_conf').output_shape[1:3],
@@ -166,8 +170,8 @@ if __name__ == '__main__':
 
 	val_generator = val_dataset.generate(batch_size=batch_size,
 	                                     shuffle=False,
-	                                     transformations=[convert_to_3_channels,
-	                                                      resize],
+	                                     transformations=convert_to_3_channels,
+	                                                      # resize],
 	                                     label_encoder=ssd_input_encoder,
 	                                     returns={'processed_images',
 	                                              'encoded_labels'},
@@ -215,7 +219,7 @@ if __name__ == '__main__':
 	                              epochs=args.num_epochs,
 	                              callbacks=callbacks,
 	                              validation_data=val_generator,
-	                              validation_steps=int(val_dataset_size / batch_size),
+	                              validation_steps=200, #TODO its' just a number...
 	                              initial_epoch=initial_epoch)
 
 '''
