@@ -46,7 +46,7 @@ if __name__ == '__main__':
 
 	# Model params
 	# Number of positive classes, e.g. 20 for Pascal VOC, 80 for MS COCO
-	n_classes = 1
+	n_classes = 6
 	scales_pascal = [0.07, 0.15, 0.3, 0.45, 0.6, 0.75, 0.9, 1.05]
 	scales_coco = [0.04, 0.1, 0.26, 0.42, 0.58, 0.74, 0.9, 1.06]
 	# TODO: rethink about this param Roy
