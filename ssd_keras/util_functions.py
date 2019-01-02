@@ -12,7 +12,7 @@ from misc_utils.tensor_sampling_utils import sample_tensors
 def sample_model_for_TR():
 
 	weights_source_path = '/Users/royhirsch/Downloads/VGG_coco_SSD_512x512_iter_360000.h5'
-	weights_destination_path = '/Users/royhirsch/Downloads/VGG_coco_SSD_512x512_iter_360000_3_classes.h5'
+	weights_destination_path = '/Users/royhirsch/Downloads/VGG_coco_SSD_512x512_iter_360000_2_classes.h5'
 
 	# Make a copy of the weights file.
 	shutil.copy(weights_source_path, weights_destination_path)
@@ -38,7 +38,7 @@ def sample_model_for_TR():
 	#       `classes_of_interest` to an integer instead of the list below. Either way, don't forget to
 	#       include the background class. That is, if you set an integer, and you want `n` positive classes,
 	#       then you must set `classes_of_interest = n + 1`.
-	classes_of_interest = [0, 3, 6]
+	classes_of_interest = [0, 6]
 	# classes_of_interest = 12 # Uncomment this in case you want to just randomly sub-sample the last axis instead of providing a list of indices.
 
 	for name in classifier_names:
@@ -204,8 +204,6 @@ def get_predicted_bbox_cropes(resize_bbox, org_im, out_dim):
 		crop = cv2.resize(crop, (out_dim, out_dim))
 		crops[i, :, :, :] = crop
 	return crops
-
-
 
 
 def quick_imshow_numpy(img):

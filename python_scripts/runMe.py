@@ -14,7 +14,7 @@ from models.keras_ssd512 import ssd_512
 from keras_loss_function.keras_ssd_loss import SSDLoss
 from util_functions import resize_bbox_to_original, get_predicted_bbox_cropes
 
-K.clear_session()  # Clear previous models from memory.
+K.clear_session()
 # Instantiate the model
 model = ssd_512(image_size=(params['img_height'], params['img_width'], params['img_channels']),
                 n_classes=params['n_classes'],
@@ -60,7 +60,7 @@ for root, dirs, files in os.walk('/Users/royhirsch/Documents/Study/Current/Compu
         if len(bbox_pred_filter) > 0:
             resize_bbox = resize_bbox_to_original(bbox_pred_filter, scale_h, scale_w)
             bbox_crops = get_predicted_bbox_cropes(resize_bbox, org_im, out_dim=128)
-            
+
     # plt.imshow(bbox_crops[0, :, :, :].astype(np.uint8))
 
 
