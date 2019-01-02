@@ -174,15 +174,15 @@ def drawRects(orgImg, rects, GTrects=None):
 # Transforms into [xmin, ymin, w, h] and rescale to original image size
 def resize_bbox_to_original(bbox_pred, scale_h, scale_w):
 	# Filter the bbox format
-	corners = bbox_pred[:, 2:]
+	corners = bbox_pred[0][:, 2:]
 
 	reformat_bbox = []
 	# Iterate over all the bbox prediction and reformat
 	for corner in corners:
-		xmin = corners[0]
-		ymin = corners[1]
-		xmax = corners[2]
-		ymax = corners[3]
+		xmin = corner[0]
+		ymin = corner[1]
+		xmax = corner[2]
+		ymax = corner[3]
 		new_cord = [xmin, ymin, xmax - xmin, ymax - ymin]
 
 		new_cord = [int(new_cord[0] / scale_w),
@@ -192,6 +192,20 @@ def resize_bbox_to_original(bbox_pred, scale_h, scale_w):
 		reformat_bbox.append(new_cord)
 	# Return the coordinated as ints
 	return np.array(reformat_bbox).astype(np.int32)
+
+# Cuts the buses bbox from the original image and resize to desired dim
+# Return a np array of shape [N, dim, dim, 4] that contains the resized buses crops.
+def get_predicted_bbox_cropes(resize_bbox, org_im, out_dim):
+	crops = np.zeros((len(resize_bbox), out_dim, out_dim, 3))
+
+	# Crop and resize each bus bbox
+	for i, bbox in enumerate(resize_bbox):
+		crop = org_im[bbox[1]:bbox[1] + bbox[3], bbox[0]:bbox[0] + bbox[2], :]
+		crop = cv2.resize(crop, (out_dim, out_dim))
+		crops[i, :, :, :] = crop
+	return crops
+
+
 
 
 def quick_imshow_numpy(img):

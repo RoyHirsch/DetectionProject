@@ -8,10 +8,11 @@ import cv2 as cv2
 import numpy as np
 import sys
 sys.path.append(os.path.join(os.path.abspath(__file__ + '../../../'), 'ssd_keras'))
+sys.path.append(os.path.join(os.path.abspath(__file__ + '../../../'), 'util_functions.py'))
 from params import *
 from models.keras_ssd512 import ssd_512
 from keras_loss_function.keras_ssd_loss import SSDLoss
-
+from util_functions import resize_bbox_to_original, get_predicted_bbox_cropes
 
 K.clear_session()  # Clear previous models from memory.
 # Instantiate the model
@@ -43,21 +44,24 @@ ssd_loss = SSDLoss(neg_pos_ratio=3, alpha=1.0)
 model.compile(optimizer=adam, loss=ssd_loss.compute_loss)
 
 # Iterate over all the imsges in the given root
-for root, dirs, files in os.walk(buses):
+for root, dirs, files in os.walk('/Users/royhirsch/Documents/Study/Current/ComputerVision/project/busesTrain'):
     for name in files:
         image_full_path = os.path.join(root, name)
-        im = cv2.imread(image_full_path)
+        org_im = cv2.imread(image_full_path)
 
-        org_h, org_w, c = np.shape(im)
+        org_h, org_w, c = np.shape(org_im)
         scale_h = params['img_height'] / float(org_h)
         scale_w = params['img_height'] / float(org_w)
 
-        im = cv2.resize(im, (params['img_height'], params['img_height']))
-        bbox_pred = model.predict(im)
+        im = cv2.resize(org_im, (params['img_height'], params['img_height']))
+        bbox_pred = model.predict(np.expand_dims(im, axis=0))
 
         bbox_pred_filter = [bbox_pred[k][bbox_pred[k, :, 1] > params['confidence_thresh']] for k in range(bbox_pred.shape[0])]
-        resize_bbox = resize_bbox_to_original(bbox_pred_filter, scale_h, scale_w)
-        bbox_crops = get_predicted_bbox_cropes(resize_bbox, im)
+        if len(bbox_pred_filter) > 0:
+            resize_bbox = resize_bbox_to_original(bbox_pred_filter, scale_h, scale_w)
+            bbox_crops = get_predicted_bbox_cropes(resize_bbox, org_im, out_dim=128)
+            
+    # plt.imshow(bbox_crops[0, :, :, :].astype(np.uint8))
 
 
 # def run(myAnnFileName, buses):
