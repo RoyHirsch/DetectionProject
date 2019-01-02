@@ -37,10 +37,10 @@ try:
     import json
 except ImportError:
     warnings.warn("'json' module is missing. The JSON-parser will be unavailable.")
-try:
-    from bs4 import BeautifulSoup
-except ImportError:
-    warnings.warn("'BeautifulSoup' module is missing. The XML-parser will be unavailable.")
+# try:
+#     from bs4 import BeautifulSoup
+# except ImportError:
+#     warnings.warn("'BeautifulSoup' module is missing. The XML-parser will be unavailable.")
 try:
     import pickle
 except ImportError:

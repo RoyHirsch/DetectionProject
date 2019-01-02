@@ -169,6 +169,31 @@ def drawRects(orgImg, rects, GTrects=None):
 	plt.imshow(cv2.cvtColor(imOut, cv2.COLOR_BGR2RGB))
 	plt.show()
 
+# Gets bbox_pred_filter fro, detection net in format:
+# [class, conf, xmin, ymin, xmax, ymax]
+# Transforms into [xmin, ymin, w, h] and rescale to original image size
+def resize_bbox_to_original(bbox_pred, scale_h, scale_w):
+	# Filter the bbox format
+	corners = bbox_pred[:, 2:]
+
+	reformat_bbox = []
+	# Iterate over all the bbox prediction and reformat
+	for corner in corners:
+		xmin = corners[0]
+		ymin = corners[1]
+		xmax = corners[2]
+		ymax = corners[3]
+		new_cord = [xmin, ymin, xmax - xmin, ymax - ymin]
+
+		new_cord = [int(new_cord[0] / scale_w),
+		            int(new_cord[1] / scale_h),
+		            int(new_cord[2] / scale_w),
+		            int(new_cord[3] / scale_h)]
+		reformat_bbox.append(new_cord)
+	# Return the coordinated as ints
+	return np.array(reformat_bbox).astype(np.int32)
+
+
 def quick_imshow_numpy(img):
 	plt.figure()
 	plt.imshow(img)
@@ -186,6 +211,4 @@ r_im = cv2.resize(im, (512, 512))
 drawRects(im, roi_points[:-1])
 drawRects(r_im, roi_scaled[:-1])
 '''
-label_path = '/Users/royhirsch/Documents/GitHub/DetectionProject/annotationsTrain.txt'
-drop_GT_notaions_to_scv(label_path)
 
