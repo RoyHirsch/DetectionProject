@@ -51,7 +51,7 @@ if __name__ == '__main__':
 
 	# Model params
 	# Number of positive classes, e.g. 20 for Pascal VOC, 80 for MS COCO
-	n_classes = 1
+	n_classes = 6
 	scales_pascal = [0.07, 0.15, 0.3, 0.45, 0.6, 0.75, 0.9, 1.05]
 	scales_coco = [0.04, 0.1, 0.26, 0.42, 0.58, 0.74, 0.9, 1.06]
 	# TODO: rethink about this param Roy
@@ -81,12 +81,23 @@ if __name__ == '__main__':
 
 	def plot_predictions(orig_image, y_pred_thresh, gt_box):
 		colors = plt.cm.hsv(np.linspace(0, 1, 21)).tolist()
-		classes = ['background', 'bus']
+		classes = ['background', 'green', 'orange', 'white', 'gray', 'blue', 'red']
 
 		plt.figure(figsize=(20, 12))
 		plt.imshow(orig_image)
 
 		current_axis = plt.gca()
+
+		for box in gt_box[0]:
+			xmin = box[1]
+			ymin = box[2]
+			xmax = box[3]
+			ymax = box[4]
+			color = colors[10]
+			label = 'GT'
+			current_axis.add_patch(
+				plt.Rectangle((xmin, ymin), xmax - xmin, ymax - ymin, color=color, fill=False, linewidth=2))
+			current_axis.text(xmin, ymin, label, size='x-large', color='white', bbox={'facecolor': color, 'alpha': 1.0})
 
 		for box in y_pred_thresh:
 			# Transform the predicted bounding boxes for the 512x512 image to the original image dimensions.
@@ -100,16 +111,6 @@ if __name__ == '__main__':
 				plt.Rectangle((xmin, ymin), xmax - xmin, ymax - ymin, color=color, fill=False, linewidth=2))
 			current_axis.text(xmin, ymin, label, size='x-large', color='white', bbox={'facecolor': color, 'alpha': 1.0})
 
-		for box in gt_box[0]:
-			xmin = box[1]
-			ymin = box[2]
-			xmax = box[3]
-			ymax = box[4]
-			color = colors[10]
-			label = 'GT'
-			current_axis.add_patch(
-				plt.Rectangle((xmin, ymin), xmax - xmin, ymax - ymin, color=color, fill=False, linewidth=2))
-			current_axis.text(xmin, ymin, label, size='x-large', color='white', bbox={'facecolor': color, 'alpha': 1.0})
 
 	# Reformat the bbox to the desired format and scale to original image size
 	# Corners is [class, xmin, ymin, xmax, ymax] or [class, confidence, xmin, ymin, xmax, ymax]
@@ -274,8 +275,8 @@ if __name__ == '__main__':
 	y_pred_thresh = [y_pred[k][y_pred[k,:,1] > confidence_threshold] for k in range(y_pred.shape[0])]
 
 	# Plot predictions
-	for i in range(dataset_size):
-		plot_predictions(input_images_tensor[i, :, :, :].astype(np.uint8), y_pred_thresh[i], gt_label_ls[i])
+	# for i in range(dataset_size):
+	# 	plot_predictions(input_images_tensor[i, :, :, :].astype(np.uint8), y_pred_thresh[i], gt_label_ls[i])
 
 	# Print IOU scores:
 	for i in range(dataset_size):
@@ -283,8 +284,10 @@ if __name__ == '__main__':
 		print('Num of gt buses : {}'.format(len(gt_label_ls[i][0])))
 		if len(gt_label_ls[i][0]) > 1:
 			a = gt_label_ls[i][0][:, 1:]
+			gt_cls = gt_label_ls[i][0][:, 0]
 		else:
 			a = gt_label_ls[i][0][0][1:]
+			gt_cls = gt_label_ls[i][0][:, 0]
 
 		if len(y_pred_thresh[i]) == 0:
 			print('No IOU')
@@ -292,8 +295,10 @@ if __name__ == '__main__':
 
 		if len(y_pred_thresh[i]) > 1:
 			b = y_pred_thresh[i][:, 2:]
+			p_cls = y_pred_thresh[i][:, 0]
 		else:
 			b = y_pred_thresh[i][0][2:]
+			p_cls = y_pred_thresh[i][:, 0]
 
 		iou_score = iou(np.array(a), np.array(b), coords='corners', mode='outer_product', border_pixels='half')
 		if len(iou_score) == 0:
@@ -301,3 +306,4 @@ if __name__ == '__main__':
 		else:
 			for row in iou_score:
 				print('IOU is {} '.format(max(row)))
+				print('gt class is {} predicted class is {}'.format(gt_cls, p_cls))

@@ -1,3 +1,4 @@
+# Params dict for the whole model
 params =      {'batch_size': 1,
                'img_channels': 3,
                # Do not change this value if you're using any of the pre-trained weights.
@@ -8,7 +9,7 @@ params =      {'batch_size': 1,
 
 			   # Model params
 			   # Number of positive classes, e.g. 20 for Pascal VOC, 80 for MS COCO
-			   'n_classes': 1,
+			   'n_classes': 6,
                'mode': 'inference',
                'reg': 0.0005,
 			   'scales_pascal': [0.07, 0.15, 0.3, 0.45, 0.6, 0.75, 0.9, 1.05],
@@ -25,8 +26,6 @@ params =      {'batch_size': 1,
 	           'confidence_thresh': 0.5,
 			   'iou_threshold': 0.45,
                'top_k': 200,
-               'nms_max_output_size':400}
-
-defs = {
-	'weights_path': '/Users/royhirsch/Downloads/ssd_epoch_55_samples_-06_loss-1.5814_val_loss-1.5561.h5'
-}
+               'nms_max_output_size':400,
+               # TODO: need to change to the local weights_path
+               'weights_path': '/Users/royhirsch/Downloads/ssd_epoch_7_classes-03_loss-2.0023_val_loss-1.9532.h5'}

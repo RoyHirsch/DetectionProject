@@ -4,7 +4,7 @@ import shutil
 import pandas as pd
 import os
 import cv2 as cv2
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 
 from misc_utils.tensor_sampling_utils import sample_tensors
 
@@ -171,24 +171,28 @@ def drawRects(orgImg, rects, GTrects=None):
 
 # Gets bbox_pred_filter fro, detection net in format:
 # [class, conf, xmin, ymin, xmax, ymax]
-# Transforms into [xmin, ymin, w, h] and rescale to original image size
+# Transforms into [xmin, ymin, w, h, class] and rescale to original image size
 def resize_bbox_to_original(bbox_pred, scale_h, scale_w):
 	# Filter the bbox format
 	corners = bbox_pred[0][:, 2:]
+	p_classes = bbox_pred[0][:, 0]
 
 	reformat_bbox = []
 	# Iterate over all the bbox prediction and reformat
-	for corner in corners:
+	for i, corner in enumerate(corners):
 		xmin = corner[0]
 		ymin = corner[1]
 		xmax = corner[2]
 		ymax = corner[3]
+		p_class = p_classes[i]
 		new_cord = [xmin, ymin, xmax - xmin, ymax - ymin]
 
 		new_cord = [int(new_cord[0] / scale_w),
 		            int(new_cord[1] / scale_h),
 		            int(new_cord[2] / scale_w),
-		            int(new_cord[3] / scale_h)]
+		            int(new_cord[3] / scale_h),
+					p_class]
+
 		reformat_bbox.append(new_cord)
 	# Return the coordinated as ints
 	return np.array(reformat_bbox).astype(np.int32)
@@ -200,11 +204,11 @@ def get_predicted_bbox_cropes(resize_bbox, org_im, out_dim):
 
 	# Crop and resize each bus bbox
 	for i, bbox in enumerate(resize_bbox):
+		bbox = bbox[1:]
 		crop = org_im[bbox[1]:bbox[1] + bbox[3], bbox[0]:bbox[0] + bbox[2], :]
 		crop = cv2.resize(crop, (out_dim, out_dim))
 		crops[i, :, :, :] = crop
 	return crops
-
 
 def quick_imshow_numpy(img):
 	plt.figure()
