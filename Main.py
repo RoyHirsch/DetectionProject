@@ -47,7 +47,7 @@ if(i == 0):
     print('This script compares the ground truth (GT) and the estimated detections\nUsage: \n-myAnns <estimated annotations file>')
     print('-anns <real annotations file> \n-buses <directory of the training images>')
     print('-saveDir <output directory> use this option if you want to save the images with the annotations')
-    print('example:\npython busProjectTest.py -myAnns myannotations.txt -anns anotationsTrain.txt -buses busesDir -saveDir Figures')
+    print('example:\npython -m Main.py -myAnns myannotations.txt -anns anotationsTrain.txt -buses busesDir -saveDir Figures')
     print('-h - show this message and exit')
     sys.exit()
 
