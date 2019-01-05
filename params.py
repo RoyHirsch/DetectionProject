@@ -28,4 +28,4 @@ params =      {'batch_size': 1,
                'top_k': 200,
                'nms_max_output_size':400,
                # TODO: need to change to the local weights_path
-               'weights_path': '/Users/royhirsch/Downloads/ssd_epoch_7_classes-03_loss-2.0023_val_loss-1.9532.h5'}
+               'weights_path': 'ssd_epoch_7_classes-03_loss-2.0023_val_loss-1.9532.h5'}
