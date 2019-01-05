@@ -9,8 +9,8 @@ import numpy as np
 import sys
 
 # Import relevat outer files
-sys.path.append(os.path.join(os.path.abspath(__file__ + '../../../'), 'ssd_keras'))
-sys.path.append(os.path.join(os.path.abspath(__file__ + '../../../'), 'util_functions.py'))
+sys.path.append(os.path.join(os.path.abspath(__file__ + '../../'), 'ssd_keras'))
+sys.path.append(os.path.join(os.path.abspath(__file__ + '../../'), 'util_functions.py'))
 
 from params import *
 from models.keras_ssd512 import ssd_512
